@@ -18,16 +18,17 @@ lexer s
 --
 nextToken :: T.Text -> (Tk.Token, T.Text)
 nextToken s
-    | ch == '=' = (newToken Tk.Assign ch, T.tail s)
-    | ch == ';' = (newToken Tk.Assign ch, T.tail s)
-    | ch == '(' = (newToken Tk.Assign ch, T.tail s)
-    | ch == ')' = (newToken Tk.Assign ch, T.tail s)
-    | ch == ',' = (newToken Tk.Assign ch, T.tail s)
-    | ch == '+' = (newToken Tk.Assign ch, T.tail s)
-    | ch == '{' = (newToken Tk.Assign ch, T.tail s)
-    | ch == '}' = (newToken Tk.Assign ch, T.tail s)
+    | ch == '=' = (newToken Tk.Assign ch, remain)
+    | ch == ';' = (newToken Tk.Assign ch, remain)
+    | ch == '(' = (newToken Tk.Assign ch, remain)
+    | ch == ')' = (newToken Tk.Assign ch, remain)
+    | ch == ',' = (newToken Tk.Assign ch, remain)
+    | ch == '+' = (newToken Tk.Assign ch, remain)
+    | ch == '{' = (newToken Tk.Assign ch, remain)
+    | ch == '}' = (newToken Tk.Assign ch, remain)
   where
     ch = T.head s
+    remain = T.tail s
 
 -- | newToken
 --
