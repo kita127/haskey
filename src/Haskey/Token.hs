@@ -1,6 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Haskey.Token (
   Token(..)
 , TokenType(..)
+, lookupIdent
 ) where
 
 import qualified Data.Text as T
@@ -35,3 +37,19 @@ data TokenType = Illegal
                | Function       -- "fn"
                | Let            -- "let"
                deriving (Eq, Show)
+
+-- | keywords
+--
+keywords :: [(T.Text, TokenType)]
+keywords = [ ("fn",  Function)
+           , ("let", Let)
+           ]
+
+-- | lookupIdent
+--
+lookupIdent :: T.Text -> TokenType
+lookupIdent ident
+    | null ks = Ident
+    | otherwise = snd $ head ks
+  where
+    ks = filter ((ident ==) . fst) keywords
