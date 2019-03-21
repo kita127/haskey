@@ -9,7 +9,7 @@ import           Text.RawString.QQ
 main :: IO ()
 main = do
     runTestTT $ TestList
-      [ testSample
+      [ testTemp
       ]
     return ()
 
@@ -58,6 +58,23 @@ testLexer = TestList
         , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "y" }
         , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
         , Tk.Token { Tk.tokenType = Tk.Rbrace , Tk.literal = "}" }
+        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+        , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
+
+        ]
+  ]
+
+testTemp :: Test
+testTemp = TestList
+  [ "testTemp test 1" ~:
+        Lx.lexer "=+(){},;" ~?= [
+          Tk.Token { Tk.tokenType = Tk.Assign , Tk.literal = "=" }
+        , Tk.Token { Tk.tokenType = Tk.Plus , Tk.literal = "+" }
+        , Tk.Token { Tk.tokenType = Tk.Rparen , Tk.literal = "(" }
+        , Tk.Token { Tk.tokenType = Tk.Lparen , Tk.literal = ")" }
+        , Tk.Token { Tk.tokenType = Tk.Rbrace , Tk.literal = "{" }
+        , Tk.Token { Tk.tokenType = Tk.Lbrace , Tk.literal = "}" }
+        , Tk.Token { Tk.tokenType = Tk.Comma , Tk.literal = "," }
         , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
         , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
 

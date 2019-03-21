@@ -9,26 +9,28 @@ import           Haskey.Token as Tk
 --
 lexer :: T.Text -> [Tk.Token]
 lexer s
-    | T.length s == 0 = [eof]
-    | otherwise       = let (tk, s') = nextToken s in tk : lexer s'
+    | Tk.tokenType tok == Tk.Eof = [tok]
+    | otherwise = tok : lexer s'
   where
-    eof = Tk.Token {Tk.tokenType = Tk.Eof, Tk.literal = ""}
+    (tok, s') = nextToken s
 
 -- | nextToken
 --
 nextToken :: T.Text -> (Tk.Token, T.Text)
 nextToken s
-    | ch == '=' = (newToken Tk.Assign ch, remain)
-    | ch == ';' = (newToken Tk.Assign ch, remain)
-    | ch == '(' = (newToken Tk.Assign ch, remain)
-    | ch == ')' = (newToken Tk.Assign ch, remain)
-    | ch == ',' = (newToken Tk.Assign ch, remain)
-    | ch == '+' = (newToken Tk.Assign ch, remain)
-    | ch == '{' = (newToken Tk.Assign ch, remain)
-    | ch == '}' = (newToken Tk.Assign ch, remain)
+    | T.length s == 0 = (eof, "")
+    | ch == '=' = (newToken Tk.Assign    ch, remain)
+    | ch == ';' = (newToken Tk.Semicolon ch, remain)
+    | ch == '(' = (newToken Tk.Rparen    ch, remain)
+    | ch == ')' = (newToken Tk.Lparen    ch, remain)
+    | ch == ',' = (newToken Tk.Comma     ch, remain)
+    | ch == '+' = (newToken Tk.Plus      ch, remain)
+    | ch == '{' = (newToken Tk.Rbrace    ch, remain)
+    | ch == '}' = (newToken Tk.Lbrace    ch, remain)
   where
     ch = T.head s
     remain = T.tail s
+    eof = Tk.Token {Tk.tokenType = Tk.Eof, Tk.literal = ""}
 
 -- | newToken
 --
