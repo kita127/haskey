@@ -27,6 +27,8 @@ data TokenType = Illegal
                | Bang           -- "!"
                | Asterisk       -- "*"
                | Slash          -- "*"
+               | Eq             -- "=="
+               | NotEq          -- "!="
 
                | Lt             -- "<"
                | Gt             -- ">"

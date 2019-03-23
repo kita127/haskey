@@ -2,6 +2,7 @@
 module Haskey.Lexer (lexer) where
 
 import qualified Data.Char    as C
+import           Data.Maybe   (fromJust)
 import qualified Data.Text    as T
 import           Haskey.Token as Tk
 
@@ -21,6 +22,8 @@ nextToken :: T.Text -> (Tk.Token, T.Text)
 nextToken s
     | T.null s     = (eof, "")
     | C.isSpace ch = nextToken remain        -- skip white space
+    | T.isPrefixOf "==" s = readFix Tk.Eq    "==" s
+    | T.isPrefixOf "!=" s = readFix Tk.NotEq "!=" s
     | ch == '='    = (newToken Tk.Assign    ch, remain)
     | ch == '+'    = (newToken Tk.Plus      ch, remain)
     | ch == '-'    = (newToken Tk.Minus     ch, remain)
@@ -73,3 +76,12 @@ readNumber s = (tok, remain)
     num = T.takeWhile C.isDigit s
     remain = T.dropWhile C.isDigit s
     tok = Tk.Token {Tk.tokenType = Tk.Int, Tk.literal = num}
+
+-- | readFix
+--
+readFix :: Tk.TokenType -> T.Text -> T.Text -> (Tk.Token, T.Text)
+readFix tkType fix s = (tok, remain)
+  where
+    remain = fromJust $ T.stripPrefix fix s
+    word = T.take (T.length fix) s
+    tok = Tk.Token {Tk.tokenType = tkType, Tk.literal = word}
