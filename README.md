@@ -9,7 +9,7 @@ It is originally written in Go.
 ## rule
 Go言語でつくるインタプリタ本と同じ条件とするため以下のルールとします
 
-- 標準ライブラリ(Prelude)のみ使用する
+- base パッケージのみ使用する
     - text、bytestring などは例外でOK
 - Parsec は使わない
     - パーサコンビネータは使わない
