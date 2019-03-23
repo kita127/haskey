@@ -27,6 +27,8 @@ let ten = 10;
 let add = fn(x, y) {
     x + y;
 };
+
+let result = add(five, ten);
 |]
 
 testLexer :: Test
@@ -74,8 +76,21 @@ testLexer = TestList
         , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
         , Tk.Token { Tk.tokenType = Tk.Rbrace , Tk.literal = "}" }
         , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
-        , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
 
+        -- let result = add(five, ten);
+        , Tk.Token { Tk.tokenType = Tk.Let , Tk.literal = "let" }
+        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "result" }
+        , Tk.Token { Tk.tokenType = Tk.Assign , Tk.literal = "=" }
+        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "add" }
+        , Tk.Token { Tk.tokenType = Tk.Lparen , Tk.literal = "(" }
+        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "five" }
+        , Tk.Token { Tk.tokenType = Tk.Comma , Tk.literal = "," }
+        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "ten" }
+        , Tk.Token { Tk.tokenType = Tk.Rparen , Tk.literal = ")" }
+        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+
+        -- EOF
+        , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
         ]
   ]
 
