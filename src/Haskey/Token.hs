@@ -43,13 +43,23 @@ data TokenType = Illegal
                -- キーワード
                | Function       -- "fn"
                | Let            -- "let"
+               | If             -- "if"
+               | Else           -- "else"
+               | TRUE           -- "true"
+               | FALSE          -- "false"
+               | Return         -- "return"
                deriving (Eq, Show)
 
 -- | keywords
 --
 keywords :: [(T.Text, TokenType)]
-keywords = [ ("fn",  Function)
-           , ("let", Let)
+keywords = [ ("fn",     Function)
+           , ("let",    Let)
+           , ("if",     If)
+           , ("else",   Else)
+           , ("true",   TRUE)
+           , ("false",  FALSE)
+           , ("return", Return)
            ]
 
 -- | lookupIdent

@@ -33,6 +33,13 @@ let result = add(five, ten);
 5 < 10 > 5;
 |]
 
+testLexerInput3 = [r|
+if (5 < 10) {
+    return true;
+} else {
+    return false;
+}|]
+
 testLexer :: Test
 testLexer = TestList
   [ "testLexer test 1" ~:
@@ -105,6 +112,30 @@ testLexer = TestList
         , Tk.Token { Tk.tokenType = Tk.Gt , Tk.literal = ">" }
         , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
         , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+
+        -- EOF
+        , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
+        ]
+
+  , "testLexer test 3" ~:
+        Lx.lexer testLexerInput3 ~?= [
+          Tk.Token { Tk.tokenType = Tk.If , Tk.literal = "if" }
+        , Tk.Token { Tk.tokenType = Tk.Lparen , Tk.literal = "(" }
+        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
+        , Tk.Token { Tk.tokenType = Tk.Lt , Tk.literal = "<" }
+        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
+        , Tk.Token { Tk.tokenType = Tk.Rparen , Tk.literal = ")" }
+        , Tk.Token { Tk.tokenType = Tk.Lbrace , Tk.literal = "{" }
+        , Tk.Token { Tk.tokenType = Tk.Return , Tk.literal = "return" }
+        , Tk.Token { Tk.tokenType = Tk.TRUE , Tk.literal = "true" }
+        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+        , Tk.Token { Tk.tokenType = Tk.Rbrace , Tk.literal = "}" }
+        , Tk.Token { Tk.tokenType = Tk.Else , Tk.literal = "else" }
+        , Tk.Token { Tk.tokenType = Tk.Lbrace , Tk.literal = "{" }
+        , Tk.Token { Tk.tokenType = Tk.Return , Tk.literal = "return" }
+        , Tk.Token { Tk.tokenType = Tk.FALSE , Tk.literal = "false" }
+        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+        , Tk.Token { Tk.tokenType = Tk.Rbrace , Tk.literal = "}" }
 
         -- EOF
         , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
