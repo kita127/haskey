@@ -20,13 +20,19 @@ lexer s
 nextToken :: T.Text -> (Tk.Token, T.Text)
 nextToken s
     | T.null s     = (eof, "")
-    | C.isSpace ch = nextToken remain        -- skip white spcce
+    | C.isSpace ch = nextToken remain        -- skip white space
     | ch == '='    = (newToken Tk.Assign    ch, remain)
+    | ch == '+'    = (newToken Tk.Plus      ch, remain)
+    | ch == '-'    = (newToken Tk.Minus     ch, remain)
+    | ch == '!'    = (newToken Tk.Bang      ch, remain)
+    | ch == '*'    = (newToken Tk.Asterisk  ch, remain)
+    | ch == '/'    = (newToken Tk.Slash     ch, remain)
+    | ch == '<'    = (newToken Tk.Lt        ch, remain)
+    | ch == '>'    = (newToken Tk.Gt        ch, remain)
     | ch == ';'    = (newToken Tk.Semicolon ch, remain)
     | ch == '('    = (newToken Tk.Lparen    ch, remain)
     | ch == ')'    = (newToken Tk.Rparen    ch, remain)
     | ch == ','    = (newToken Tk.Comma     ch, remain)
-    | ch == '+'    = (newToken Tk.Plus      ch, remain)
     | ch == '{'    = (newToken Tk.Lbrace    ch, remain)
     | ch == '}'    = (newToken Tk.Rbrace    ch, remain)
     | isLetter  ch = readIdentifire s

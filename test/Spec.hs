@@ -29,6 +29,8 @@ let add = fn(x, y) {
 };
 
 let result = add(five, ten);
+!-/*5;
+5 < 10 > 5;
 |]
 
 testLexer :: Test
@@ -87,6 +89,21 @@ testLexer = TestList
         , Tk.Token { Tk.tokenType = Tk.Comma , Tk.literal = "," }
         , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "ten" }
         , Tk.Token { Tk.tokenType = Tk.Rparen , Tk.literal = ")" }
+        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+
+
+        , Tk.Token { Tk.tokenType = Tk.Bang , Tk.literal = "!" }
+        , Tk.Token { Tk.tokenType = Tk.Minus , Tk.literal = "-" }
+        , Tk.Token { Tk.tokenType = Tk.Slash , Tk.literal = "/" }
+        , Tk.Token { Tk.tokenType = Tk.Asterisk , Tk.literal = "*" }
+        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
+        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+
+        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
+        , Tk.Token { Tk.tokenType = Tk.Lt , Tk.literal = "<" }
+        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
+        , Tk.Token { Tk.tokenType = Tk.Gt , Tk.literal = ">" }
+        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
         , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
 
         -- EOF
