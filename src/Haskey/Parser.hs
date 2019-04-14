@@ -63,15 +63,12 @@ nextToken = Parser (\input -> case input of
                            []     -> Fail "empty imput" []
                            (x:xs) -> Done x xs)
 
--- | peek
+-- | curToken
 --
 -- 先頭のトークンを返すが入力を消費しない
 --
--- TODO:
--- curToken とかの方が名前よい
---
-peek :: Parser Tk.Token
-peek = Parser (\input -> case input of
+curToken :: Parser Tk.Token
+curToken = Parser (\input -> case input of
                            []    -> Fail "empty imput" []
                            (x:_) -> Done x input)
 
@@ -115,7 +112,7 @@ parseStatement = parseLetStatement
 --
 parseExpressionStatement :: Parser Ast.Statement
 parseExpressionStatement = do
-    t <- peek
+    t <- curToken
     exp <- parseExpression Lowest
     many parseSemicolon
     return $ Ast.ExpressionStatement t exp
@@ -189,7 +186,7 @@ parseIdentifire = do
 --
 parseToken :: Tk.TokenType -> Parser Tk.Token
 parseToken expected = do
-    t <- peek
+    t <- curToken
     if Tk.tokenIs expected t
         then nextToken
         else fail (printf "invalid token:%s expected token type:%s" (show t) (show expected))
@@ -198,7 +195,7 @@ parseToken expected = do
 --
 takeWhileToken :: Tk.TokenType -> Parser ()
 takeWhileToken target = do
-    t <- peek
+    t <- curToken
     if Tk.tokenIs target t
         then return ()
         else nextToken >> takeWhileToken target
