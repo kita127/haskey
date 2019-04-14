@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings     #-}
 module Haskey.Ast
 (
   Program
@@ -40,4 +39,4 @@ data Expression = Nil
 
 
 program :: [Statement] -> Program
-program stmts = Program stmts
+program = Program
