@@ -46,23 +46,23 @@ instance Monad Parser where
    -- fail :: String -> m a
    fail s = Parser (\input -> Fail s input)
 
--- | item
+-- | nextToken
 --
 -- 先頭のトークンを返し入力を消費する
 --
-item :: Parser Tk.Token
-item = Parser (\input -> if null input
-                           then Fail "empty imput" []
-                           else Done (head input) (tail input))
+nextToken :: Parser Tk.Token
+nextToken = Parser (\input -> case input of
+                           []     -> Fail "empty imput" []
+                           (x:xs) -> Done x xs)
 
 -- | peek
 --
 -- 先頭のトークンを返すが入力を消費しない
 --
 peek :: Parser Tk.Token
-peek = Parser (\input -> if null input
-                            then Fail "empty imput" []
-                            else Done (head input) input)
+peek = Parser (\input -> case input of
+                           []    -> Fail "empty imput" []
+                           (x:_) -> Done x input)
 
 -- | (<|>)
 --
@@ -153,7 +153,7 @@ parseToken :: Tk.TokenType -> Parser Tk.Token
 parseToken expected = do
     t <- peek
     if Tk.tokenIs expected t
-        then item
+        then nextToken
         else fail (printf "invalid token:%s expected token type:%s" (show t) (show expected))
 
 -- | takeWhileToken
@@ -163,5 +163,5 @@ takeWhileToken target = do
     t <- peek
     if Tk.tokenIs target t
         then return ()
-        else item >> takeWhileToken target
+        else nextToken >> takeWhileToken target
 
