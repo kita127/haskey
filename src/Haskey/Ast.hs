@@ -2,15 +2,17 @@
 {-# LANGUAGE OverloadedStrings     #-}
 module Haskey.Ast
 (
-  Program(..)
+  Program
 , Statement(..)
 , Expression(..)
+, program
+, statements
 ) where
 
 import qualified Data.Text    as T
 import qualified Haskey.Token as Tk
 
-data Program = Program {statements :: [Statement]}
+newtype Program = Program {statements :: [Statement]}
   deriving (Eq, Show)
 
 data Statement = LetStatement {
@@ -31,3 +33,6 @@ data Expression = Nil
                   }
                 deriving (Eq, Show)
 
+
+program :: [Statement] -> Program
+program stmts = Program stmts

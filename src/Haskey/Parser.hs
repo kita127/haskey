@@ -72,7 +72,7 @@ peek = Parser (\input -> if null input
 -- error 関数を最終的にはとりのぞく
 --
 parse :: [Tk.Token] -> Ast.Program
-parse = Ast.Program . result
+parse = Ast.program . result
   where
     result ts'
         | (Tk.tokenIs Tk.Eof . head) ts' = []
