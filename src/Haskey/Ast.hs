@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
 module Haskey.Ast
 (
   Program
@@ -11,9 +12,21 @@ module Haskey.Ast
 import qualified Data.Text    as T
 import qualified Haskey.Token as Tk
 
+-- | class Stringer
+--
+class Stringer a where
+    string :: a -> T.Text
+
+-- | type Program
+--
 newtype Program = Program {statements :: [Statement]}
   deriving (Eq, Show)
 
+instance Stringer Program where
+    string = T.concat . map string . statements
+
+-- | type Statement
+--
 data Statement = LetStatement {
                    stmtToken :: Tk.Token
                  , name      :: Expression  -- Identifire
@@ -23,20 +36,40 @@ data Statement = LetStatement {
                    stmtToken   :: Tk.Token
                  , returnValue :: Expression
                  }
+               | ExpressionStatement {
+                   stmtToken  :: Tk.Token
+                 , expression :: Expression
+                 }
                deriving (Eq, Show)
+
+instance Stringer Statement where
+    string (LetStatement t n v)      = Tk.literal t <> " " <> string n <> " = " <> string v <> ";"
+    string (ReturnStatement t v)     = Tk.literal t <> " " <> string v <> ";"
+    string (ExpressionStatement _ e) = string e <> ";"
 
 -- TODO:
 -- Nil は最終的に削除
 --
 -- TODO:
 -- レコードの重複をなんらかの方法でできるようにする
+
+-- | type Expression
+--
 data Expression = Nil
                 | Identifire {
                     expToken :: Tk.Token
-                  , idValue  :: T.Text
+                  , expValue :: T.Text
                   }
                 deriving (Eq, Show)
 
+instance Stringer Expression where
+    string Nil              = "null"
+    string (Identifire _ v) = v
 
+
+-- | progra
+--
 program :: [Statement] -> Program
 program = Program
+
+

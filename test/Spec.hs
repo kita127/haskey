@@ -186,7 +186,7 @@ testLetStatementIdentifires expected ast =
       then Right "ok"
       else Left (show actualValues)
   where
-    actualValues = map (Ast.idValue . Ast.name) (Ast.statements ast)
+    actualValues = map (Ast.expValue . Ast.name) (Ast.statements ast)
 
 
 testReturnStatementInput1 = [r|
