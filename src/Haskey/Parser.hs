@@ -3,8 +3,9 @@ module Haskey.Parser
   parse
 ) where
 
-import qualified Haskey.Ast   as Ast
-import qualified Haskey.Token as Tk
+import           Control.Applicative
+import qualified Haskey.Ast          as Ast
+import qualified Haskey.Token        as Tk
 import           Text.Printf
 
 ----------------------------------------------------------------------------------------------------
@@ -46,6 +47,13 @@ instance Monad Parser where
    -- fail :: String -> m a
    fail s = Parser (\input -> Fail s input)
 
+instance Alternative Parser where
+  -- many :: f a -> f [a]
+  -- | (<|>)
+  pa <|> pb = Parser (\input -> case runParser pa input of
+                           r@(Done _ _) -> r
+                           (Fail _ _)   -> runParser pb input)
+
 -- | nextToken
 --
 -- 先頭のトークンを返し入力を消費する
@@ -59,19 +67,28 @@ nextToken = Parser (\input -> case input of
 --
 -- 先頭のトークンを返すが入力を消費しない
 --
+-- TODO:
+-- curToken とかの方が名前よい
+--
 peek :: Parser Tk.Token
 peek = Parser (\input -> case input of
                            []    -> Fail "empty imput" []
                            (x:_) -> Done x input)
 
--- | (<|>)
---
-(<|>) :: Parser a -> Parser a -> Parser a
-pa <|> pb = Parser (\input -> case runParser pa input of
-                        r@(Done _ _) -> r
-                        (Fail _ _)   -> runParser pb input)
+
 
 ----------------------------------------------------------------------------------------------------
+
+-- | Precedence
+--
+data Precedence = Lowest
+                | Equals            -- ==
+                | LessGreater       -- > or <
+                | Sum               -- +
+                | Product           -- *
+                | Prefix            -- -X or !X
+                | Call              -- myFunction(X)
+                deriving (Eq, Show, Ord)
 
 -- | parse
 --
@@ -90,7 +107,28 @@ parse = Ast.program . result
 -- | parseStatement
 --
 parseStatement :: Parser Ast.Statement
-parseStatement = parseLetStatement <|> parseReturnStatement
+parseStatement = parseLetStatement
+             <|> parseReturnStatement
+             <|> parseExpressionStatement
+
+-- | parseExpressionStatement
+--
+parseExpressionStatement :: Parser Ast.Statement
+parseExpressionStatement = do
+    t <- peek
+    exp <- parseExpression Lowest
+    many parseSemicolon
+    return $ Ast.ExpressionStatement t exp
+
+-- | parseExpression
+--
+parseExpression :: Precedence -> Parser Ast.Expression
+parseExpression _ = prefixExpression
+
+-- prefixExpression
+--
+prefixExpression :: Parser Ast.Expression
+prefixExpression = parseIdentifire
 
 -- | parseReturnStatement
 --
