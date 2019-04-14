@@ -14,6 +14,7 @@ main = do
     runTestTT $ TestList
       [ testLexer
       , testLetStatement
+      , testReturnStatement
       ]
     return ()
 
@@ -182,8 +183,24 @@ testLetStatement = TestList
 testLetStatementIdentifires :: [T.Text] -> Ast.Program -> Either String String
 testLetStatementIdentifires expected ast =
   if actualValues == expected
-  then Right "ok"
-  else Left (show actualValues)
+      then Right "ok"
+      else Left (show actualValues)
   where
     actualValues = map (Ast.idValue . Ast.name) (Ast.statements ast)
 
+
+testReturnStatementInput1 = [r|
+return 5;
+return 10;
+return 993322;
+|]
+
+testReturnStatement :: Test
+testReturnStatement = TestList
+  [ "testReturnStatement test 1" ~:
+        (testReturnStatementLiteral . Ps.parse . Lx.lexer) testReturnStatementInput1
+            ~?= ["return", "return", "return" ]
+  ]
+
+testReturnStatementLiteral :: Ast.Program -> [T.Text]
+testReturnStatementLiteral = map (Tk.literal . Ast.stmtToken) . Ast.statements

@@ -64,6 +64,13 @@ peek = Parser (\input -> if null input
                             then Fail "empty imput" []
                             else Done (head input) input)
 
+-- | (<|>)
+--
+(<|>) :: Parser a -> Parser a -> Parser a
+pa <|> pb = Parser (\input -> case runParser pa input of
+                        r@(Done _ _) -> r
+                        (Fail _ _)   -> runParser pb input)
+
 ----------------------------------------------------------------------------------------------------
 
 -- | parse
@@ -83,8 +90,25 @@ parse = Ast.program . result
 -- | parseStatement
 --
 parseStatement :: Parser Ast.Statement
-parseStatement = parseLetStatement
+parseStatement = parseLetStatement <|> parseReturnStatement
 
+-- | parseReturnStatement
+--
+parseReturnStatement :: Parser Ast.Statement
+parseReturnStatement = do
+    t <- parseReturn
+    -- value <- parseExpression
+
+    -- TODO: セミコロンまで読み飛ばしている
+    takeWhileToken Tk.Semicolon
+    parseSemicolon
+
+    return $ Ast.ReturnStatement t Ast.Nil
+
+-- | parseReturn
+--
+parseReturn :: Parser Tk.Token
+parseReturn = parseToken Tk.Return
 
 -- | parseLetStatement
 --
