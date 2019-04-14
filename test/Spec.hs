@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+import qualified Data.Text         as T
+import qualified Haskey.Ast        as Ast
 import qualified Haskey.Lexer      as Lx
+import qualified Haskey.Parser     as Ps
 import qualified Haskey.Token      as Tk
 import           Test.HUnit
 import           Text.RawString.QQ
@@ -10,6 +13,7 @@ main :: IO ()
 main = do
     runTestTT $ TestList
       [ testLexer
+      , testLetStatement
       ]
     return ()
 
@@ -162,4 +166,24 @@ testLexer = TestList
         ]
   ]
 
+testLetStatementInput1 = [r|
+let x = 5;
+let y = 10;
+let foobar = 838383;
+|]
+
+testLetStatement :: Test
+testLetStatement = TestList
+  [ "testLetStatement test 1" ~:
+        (testLetStatementIdentifires ["x", "y", "foobar"] . Ps.parse . Lx.lexer) testLetStatementInput1
+            ~?= Right "ok"
+  ]
+
+testLetStatementIdentifires :: [T.Text] -> Ast.Program -> Either String String
+testLetStatementIdentifires expected ast =
+  if actualValues == expected
+  then Right "ok"
+  else Left (show actualValues)
+  where
+    actualValues = map (Ast.idValue . Ast.name) (Ast.statements ast)
 

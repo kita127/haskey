@@ -3,6 +3,7 @@ module Haskey.Token (
   Token(..)
 , TokenType(..)
 , lookupIdent
+, tokenIs
 ) where
 
 import qualified Data.Text as T
@@ -72,3 +73,8 @@ lookupIdent ident
     | otherwise = snd $ head ks
   where
     ks = filter ((ident ==) . fst) keywords
+
+-- | tokenIs
+--
+tokenIs :: TokenType -> Token -> Bool
+tokenIs tt tok = tokenType tok == tt

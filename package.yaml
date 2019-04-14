@@ -53,3 +53,4 @@ tests:
     - haskey
     - HUnit
     - raw-strings-qq
+    - text
