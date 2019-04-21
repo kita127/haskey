@@ -137,6 +137,8 @@ prefixExpression = do
     case Tk.tokenType t of
         Tk.Ident -> parseIdentifire
         Tk.Int -> parseIntegerLiteral
+        Tk.Bang -> parsePrefixExpression
+        Tk.Minus -> parsePrefixExpression
         _ -> fail . printf "no prefix parse function for %s found" . show . Tk.tokenType $ t
 
 -- | parseReturnStatement
@@ -186,6 +188,15 @@ parseAssign = parseToken Tk.Assign
 --
 parseSemicolon :: Parser Tk.Token
 parseSemicolon = parseToken Tk.Semicolon
+
+-- | parsePrefixExpression
+--
+parsePrefixExpression :: Parser Ast.Expression
+parsePrefixExpression = do
+    t <- curToken
+    nextToken
+    r <- parseExpression Prefix
+    return $ Ast.PrefixExpression t (Tk.literal t) r
 
 -- | parseIdentifire
 --

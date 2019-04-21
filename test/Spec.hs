@@ -17,6 +17,7 @@ main = do
       , testReturnStatement
       , testIdentifireExpression
       , testIntegerLiteralExpression
+      , testParsingPrefixExpressions
       ]
     return ()
 
@@ -216,3 +217,18 @@ testIntegerLiteralExpression = TestList
         (Ast.string . Ps.parse . Lx.lexer) "5;" ~?= "5;"
   ]
 
+
+testParsingPrefixExpressions :: Test
+testParsingPrefixExpressions = TestList
+  [ "testParsingPrefixExpressions test 1" ~:
+        (testPrefixExpressionHelper . head . Ast.statements . Ps.parse . Lx.lexer) "!5;" ~?=
+            Right ("!", 5)
+
+  , "testParsingPrefixExpressions test 2" ~:
+        (testPrefixExpressionHelper . head . Ast.statements . Ps.parse . Lx.lexer) "-15;" ~?=
+            Right ("-", 15)
+  ]
+
+testPrefixExpressionHelper :: Ast.Statement -> Either T.Text (T.Text, Integer)
+testPrefixExpressionHelper (Ast.ExpressionStatement t e) = Right (Ast.operator e, Ast.intValue $ Ast.right e)
+testPrefixExpressionHelper stmt = Left $ Ast.string stmt
