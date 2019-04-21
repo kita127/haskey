@@ -113,6 +113,10 @@ parseStatement = do
 
 -- | parseExpressionStatement
 --
+-- TODO:
+-- many では必要以上にセミコロンを消費するため1つor0だけ消費するよう
+-- 変更する
+--
 parseExpressionStatement :: Parser Ast.Statement
 parseExpressionStatement = do
     t <- curToken
