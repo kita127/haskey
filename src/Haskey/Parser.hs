@@ -95,11 +95,16 @@ data Precedence = Lowest
 parse :: [Tk.Token] -> Ast.Program
 parse = Ast.program . result
   where
-    result ts'
-        | (Tk.tokenIs Tk.Eof . head) ts' = []
-        | otherwise = case runParser parseStatement ts' of
-            (Done a r)              -> a : result r
-            (Fail reason remaining) -> error reason
+    result ts
+        | (Tk.tokenIs Tk.Eof . head) ts = []
+        | otherwise = case runParser parseStatement ts of
+            (Done a r)           -> a : result r
+            (Fail reason (r:rs)) -> newFailStmt r reason : result rs
+
+-- | newFailStmt
+--
+newFailStmt :: Tk.Token -> String -> Ast.Statement
+newFailStmt = Ast.FailStatement
 
 -- | parseStatement
 --
@@ -190,6 +195,9 @@ parseIdentifire = do
     return $ Ast.Identifire t (Tk.literal t)
 
 -- | parseToken
+--
+-- TODO:
+-- Token 全て表示すると情報過多のためタイプだけとかに検討する
 --
 parseToken :: Tk.TokenType -> Parser Tk.Token
 parseToken expected = do

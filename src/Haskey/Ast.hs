@@ -5,6 +5,7 @@ module Haskey.Ast
   Program
 , Statement(..)
 , Expression(..)
+, string
 , program
 , statements
 ) where
@@ -40,12 +41,17 @@ data Statement = LetStatement {
                    stmtToken  :: Tk.Token
                  , expression :: Expression
                  }
+               | FailStatement {
+                   stmtToken :: Tk.Token
+                 , reason    :: String
+                 }
                deriving (Eq, Show)
 
 instance Stringer Statement where
     string (LetStatement t n v)      = Tk.literal t <> " " <> string n <> " = " <> string v <> ";"
     string (ReturnStatement t v)     = Tk.literal t <> " " <> string v <> ";"
     string (ExpressionStatement _ e) = string e <> ";"
+    string (FailStatement _ r) = T.pack r
 
 -- TODO:
 -- Nil は最終的に削除

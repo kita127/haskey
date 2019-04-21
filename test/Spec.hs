@@ -182,8 +182,8 @@ testLetStatement = TestList
   ]
 
 testIdentifireName :: Ast.Statement -> T.Text
-testIdentifireName (Ast.LetStatement _ n v) = Ast.expValue n
-testIdentifireName _                        = "unknown data type"
+testIdentifireName (Ast.LetStatement _ n v)  = Ast.expValue n
+testIdentifireName f@(Ast.FailStatement _ _) = Ast.string f
 
 
 testReturnStatementInput1 = [r|
