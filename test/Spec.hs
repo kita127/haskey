@@ -177,17 +177,13 @@ let foobar = 838383;
 testLetStatement :: Test
 testLetStatement = TestList
   [ "testLetStatement test 1" ~:
-        (testLetStatementIdentifires ["x", "y", "foobar"] . Ps.parse . Lx.lexer) testLetStatementInput1
-            ~?= Right "ok"
+        (map testIdentifireName . Ast.statements . Ps.parse . Lx.lexer) testLetStatementInput1
+            ~?= ["x", "y", "foobar"]
   ]
 
-testLetStatementIdentifires :: [T.Text] -> Ast.Program -> Either String String
-testLetStatementIdentifires expected ast =
-  if actualValues == expected
-      then Right "ok"
-      else Left (show actualValues)
-  where
-    actualValues = map (Ast.expValue . Ast.name) (Ast.statements ast)
+testIdentifireName :: Ast.Statement -> T.Text
+testIdentifireName (Ast.LetStatement _ n v) = Ast.expValue n
+testIdentifireName _                        = "unknown data type"
 
 
 testReturnStatementInput1 = [r|
