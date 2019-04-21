@@ -4,6 +4,7 @@ module Haskey.Parser
 ) where
 
 import           Control.Applicative
+import qualified Data.Text           as T
 import qualified Haskey.Ast          as Ast
 import qualified Haskey.Token        as Tk
 import           Text.Printf
@@ -131,7 +132,12 @@ parseExpression _ = prefixExpression
 -- prefixExpression
 --
 prefixExpression :: Parser Ast.Expression
-prefixExpression = parseIdentifire
+prefixExpression = do
+    t <- curToken
+    case Tk.tokenType t of
+        Tk.Ident -> parseIdentifire
+        Tk.Int -> parseIntegerLiteral
+        _ -> fail . printf "no prefix parse function for %s found" . show . Tk.tokenType $ t
 
 -- | parseReturnStatement
 --
@@ -187,6 +193,22 @@ parseIdentifire :: Parser Ast.Expression
 parseIdentifire = do
     t <- parseToken Tk.Ident
     return $ Ast.Identifire t (Tk.literal t)
+
+-- | parseIntegerLiteral
+--
+parseIntegerLiteral :: Parser Ast.Expression
+parseIntegerLiteral = do
+    t <- curToken
+    v <- parseInteger
+    return $ Ast.IntegerLiteral t v
+
+-- | parseInteger
+--
+parseInteger :: Parser Integer
+parseInteger = do
+    v <- parseToken Tk.Int
+    let intV = read . T.unpack . Tk.literal $ v :: Integer
+    return intV
 
 -- | parseToken
 --

@@ -16,6 +16,7 @@ main = do
       , testLetStatement
       , testReturnStatement
       , testIdentifireExpression
+      , testIntegerLiteralExpression
       ]
     return ()
 
@@ -208,3 +209,10 @@ testIdentifireExpression = TestList
   [ "testIdentifireExpression test 1" ~:
         (Ast.string . Ps.parse . Lx.lexer) "foobar;" ~?= "foobar;"
   ]
+
+testIntegerLiteralExpression :: Test
+testIntegerLiteralExpression = TestList
+  [ "testIntegerLiteralExpression test 1" ~:
+        (Ast.string . Ps.parse . Lx.lexer) "5;" ~?= "5;"
+  ]
+

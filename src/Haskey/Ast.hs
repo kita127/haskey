@@ -66,11 +66,16 @@ data Expression = Nil
                     expToken :: Tk.Token
                   , expValue :: T.Text
                   }
+                | IntegerLiteral {
+                    expToken :: Tk.Token
+                  , intValue :: Integer
+                  }
                 deriving (Eq, Show)
 
 instance Stringer Expression where
-    string Nil              = "null"
-    string (Identifire _ v) = v
+    string Nil                  = "null"
+    string (Identifire _ v)     = v
+    string (IntegerLiteral t _) = Tk.literal t
 
 
 -- | progra
