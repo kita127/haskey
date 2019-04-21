@@ -104,9 +104,12 @@ parse = Ast.program . result
 -- | parseStatement
 --
 parseStatement :: Parser Ast.Statement
-parseStatement = parseLetStatement
-             <|> parseReturnStatement
-             <|> parseExpressionStatement
+parseStatement = do
+    t <- curToken
+    case Tk.tokenType t of
+        Tk.Let    -> parseLetStatement
+        Tk.Return -> parseReturnStatement
+        _         -> parseExpressionStatement
 
 -- | parseExpressionStatement
 --
