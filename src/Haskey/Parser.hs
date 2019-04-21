@@ -89,9 +89,6 @@ data Precedence = Lowest
 
 -- | parse
 --
--- TODO:
--- error 関数を最終的にはとりのぞく
---
 parse :: [Tk.Token] -> Ast.Program
 parse = Ast.program . result
   where
@@ -118,16 +115,13 @@ parseStatement = do
 
 -- | parseExpressionStatement
 --
--- TODO:
--- many では必要以上にセミコロンを消費するため1つor0だけ消費するよう
--- 変更する
---
 parseExpressionStatement :: Parser Ast.Statement
 parseExpressionStatement = do
     t <- curToken
     exp <- parseExpression Lowest
-    many parseSemicolon
+    consumeOneOrZero parseSemicolon
     return $ Ast.ExpressionStatement t exp
+
 
 -- | parseExpression
 --
@@ -215,3 +209,7 @@ takeWhileToken target = do
         then return ()
         else nextToken >> takeWhileToken target
 
+-- | consumeOneOrZero
+--
+consumeOneOrZero :: Parser a -> Parser ()
+consumeOneOrZero p = p >> pure () <|> pure ()
