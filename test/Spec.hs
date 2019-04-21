@@ -206,20 +206,5 @@ testReturnStatementLiteral = map (Tk.literal . Ast.stmtToken) . Ast.statements
 testIdentifireExpression :: Test
 testIdentifireExpression = TestList
   [ "testIdentifireExpression test 1" ~:
-        (Ast.statements . Ps.parse . Lx.lexer) "foobar;" ~?=
-          [
-            Ast.ExpressionStatement {
-              Ast.stmtToken = Tk.Token {
-                Tk.tokenType = Tk.Ident
-              , Tk.literal = "foobar"
-              }
-            , Ast.expression = Ast.Identifire {
-                Ast.expToken = Tk.Token {
-                  Tk.tokenType = Tk.Ident
-                , Tk.literal = "foobar"
-                }
-              , Ast.expValue = "foobar"
-              }
-            }
-          ]
+        (Ast.string . Ps.parse . Lx.lexer) "foobar;" ~?= "foobar;"
   ]
