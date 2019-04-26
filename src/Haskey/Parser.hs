@@ -4,6 +4,7 @@ module Haskey.Parser
 ) where
 
 import           Control.Applicative
+import qualified Data.Map            as M
 import qualified Data.Text           as T
 import qualified Haskey.Ast          as Ast
 import qualified Haskey.Token        as Tk
@@ -95,6 +96,45 @@ data Precedence = Lowest
                 | Call              -- myFunction(X)
                 deriving (Eq, Show, Ord)
 
+-- | precedences
+--
+precedences :: M.Map Tk.TokenType Precedence
+precedences = M.fromList [
+                (Tk.Eq, Equals)
+              , (Tk.NotEq, Equals)
+              , (Tk.Lt, LessGreater)
+              , (Tk.Gt, LessGreater)
+              , (Tk.Plus, Sum)
+              , (Tk.Minus, Sum)
+              , (Tk.Slash, Product)
+              , (Tk.Asterisk, Product)
+              ]
+
+-- | prefixParseFns
+--
+prefixParseFns :: M.Map Tk.TokenType (Parser Ast.Expression)
+prefixParseFns = M.fromList [
+                   (Tk.Ident, parseIdentifire)
+                 , (Tk.Int, parseIntegerLiteral)
+                 , (Tk.Bang, parsePrefixExpression)
+                 , (Tk.Minus, parsePrefixExpression)
+                 ]
+
+-- | infixParseFns
+--
+infixParseFns :: M.Map Tk.TokenType (Ast.Expression -> Parser Ast.Expression)
+infixParseFns = M.fromList [
+                  (Tk.Plus, parseInfixExpression)
+                , (Tk.Minus, parseInfixExpression)
+                , (Tk.Slash, parseInfixExpression)
+                , (Tk.Asterisk, parseInfixExpression)
+                , (Tk.Eq, parseInfixExpression)
+                , (Tk.NotEq, parseInfixExpression)
+                , (Tk.Lt, parseInfixExpression)
+                , (Tk.Gt, parseInfixExpression)
+                ]
+
+
 -- | parse
 --
 -- TODO:
@@ -140,14 +180,32 @@ parseExpressionStatement = do
 -- | parseExpression
 --
 parseExpression :: Precedence -> Parser Ast.Expression
-parseExpression _ = do
+parseExpression precedence = do
     t <- curToken
-    case Tk.tokenType t of
-        Tk.Ident -> parseIdentifire
-        Tk.Int -> parseIntegerLiteral
-        Tk.Bang -> parsePrefixExpression
-        Tk.Minus -> parsePrefixExpression
-        _ -> fail . printf "no prefix parse function for %s found" . show . Tk.tokenType $ t
+    let prefixFn = case M.lookup (Tk.tokenType t) prefixParseFns of
+                    (Just f) -> f
+                    Nothing -> fail . printf "no prefix parse function for %s found" . show .Tk.tokenType $ t
+    leftExp <- prefixFn
+    prattParse precedence leftExp
+
+
+-- | prattParse
+--
+prattParse :: Precedence -> Ast.Expression -> Parser Ast.Expression
+prattParse precedence leftExp = do
+    pk <- peekToken
+    pkPre <- peekPrecedence
+    if not (Tk.tokenIs Tk.Semicolon pk) && precedence < pkPre
+    then do
+        t <- next peekToken
+        let infixFn = case M.lookup (Tk.tokenType t) infixParseFns of
+                        (Just f) -> f
+                        Nothing -> fail . printf "no infix parse function for %s found" . show . Tk.tokenType $ t
+        leftExp' <- infixFn leftExp
+        prattParse precedence leftExp'
+
+    else return leftExp
+
 
 
 -- | parseReturnStatement
@@ -195,6 +253,15 @@ parseAssign = parseToken Tk.Assign
 --
 parseSemicolon :: Parser Tk.Token
 parseSemicolon = parseToken Tk.Semicolon
+
+-- | parseInfixExpression
+--
+parseInfixExpression :: Ast.Expression -> Parser Ast.Expression
+parseInfixExpression leftExp = do
+    t <- curToken
+    precedence <- next curPrecedence
+    rightExp <- parseExpression precedence
+    return $ Ast.InfixExpression t leftExp (Tk.literal t) rightExp
 
 -- | parsePrefixExpression
 --
@@ -264,3 +331,22 @@ takeWhileToken target = do
 --
 next :: Parser a -> Parser a
 next p = p <* nextToken
+
+
+-- | peekPrecedence
+--
+peekPrecedence :: Parser Precedence
+peekPrecedence = do
+    t <- peekToken
+    case M.lookup (Tk.tokenType t) precedences of
+        Just v  -> return v
+        Nothing -> return Lowest
+
+-- | curPrecedence
+--
+curPrecedence :: Parser Precedence
+curPrecedence = do
+    t <- curToken
+    case M.lookup (Tk.tokenType t) precedences of
+        Just v  -> return v
+        Nothing -> return Lowest

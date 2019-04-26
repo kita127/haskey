@@ -18,6 +18,7 @@ main = do
       , testIdentifireExpression
       , testIntegerLiteralExpression
       , testParsingPrefixExpressions
+      , testParsingInfixExpressions
       ]
     return ()
 
@@ -239,3 +240,39 @@ testParsingPrefixExpressions = TestList
 testPrefixExpressionHelper :: Ast.Statement -> Either T.Text (T.Text, Integer)
 testPrefixExpressionHelper (Ast.ExpressionStatement t e) = Right (Ast.operator e, Ast.intValue $ Ast.right e)
 testPrefixExpressionHelper stmt = Left $ Ast.string stmt
+
+-- | testParsingInfixExpressions
+--
+testParsingInfixExpressions :: Test
+testParsingInfixExpressions = TestList
+  [ "testParsingInfixExpressions test 1" ~:
+        (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 + 5;" ~?=
+            Right (5, "+", 5)
+
+  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 - 5;" ~?=
+            Right (5, "-", 5)
+
+  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 * 5;" ~?=
+            Right (5, "*", 5)
+
+  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 / 5;" ~?=
+            Right (5, "/", 5)
+
+  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 > 5;" ~?=
+            Right (5, ">", 5)
+
+  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 < 5;" ~?=
+            Right (5, "<", 5)
+
+  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 == 5;" ~?=
+            Right (5, "==", 5)
+
+  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 != 5;" ~?=
+            Right (5, "!=", 5)
+
+  ]
+
+testParsingInfixExpressionsHelper :: Ast.Program -> Either T.Text (Integer, T.Text, Integer)
+testParsingInfixExpressionsHelper program = case Ast.statements program of
+                                                [(Ast.ExpressionStatement _ (Ast.InfixExpression _ l o r))] -> Right (Ast.intValue l, o, Ast.intValue r)
+                                                _ -> Left $ Ast.string program

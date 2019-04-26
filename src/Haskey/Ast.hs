@@ -75,13 +75,20 @@ data Expression = Nil
                   , operator :: T.Text
                   , right    :: Expression
                   }
+                | InfixExpression {
+                    expToken :: Tk.Token
+                  , left     :: Expression
+                  , operator :: T.Text
+                  , right    :: Expression
+                  }
                 deriving (Eq, Show)
 
 instance Stringer Expression where
-    string Nil                      = "null"
-    string (Identifire _ v)         = v
-    string (IntegerLiteral t _)     = Tk.literal t
-    string (PrefixExpression _ o r) = "(" <> o <> string r <> ")"
+    string Nil                       = "null"
+    string (Identifire _ v)          = v
+    string (IntegerLiteral t _)      = Tk.literal t
+    string (PrefixExpression _ o r)  = "(" <> o <> string r <> ")"
+    string (InfixExpression _ l o r) = "(" <> string l <> o <> string r <> ")"
 
 
 -- | progra

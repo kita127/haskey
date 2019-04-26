@@ -28,6 +28,7 @@ library:
   - -Wall
   dependencies:
   - text
+  - containers
 
 executables:
   haskey-exe:
