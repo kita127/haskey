@@ -330,15 +330,11 @@ next p = p <* nextToken
 peekPrecedence :: Parser Precedence
 peekPrecedence = do
     t <- peekToken
-    case M.lookup (Tk.tokenType t) precedences of
-        Just v  -> return v
-        Nothing -> return Lowest
+    return $ M.findWithDefault Lowest (Tk.tokenType t) precedences
 
 -- | curPrecedence
 --
 curPrecedence :: Parser Precedence
 curPrecedence = do
     t <- curToken
-    case M.lookup (Tk.tokenType t) precedences of
-        Just v  -> return v
-        Nothing -> return Lowest
+    return $ M.findWithDefault Lowest (Tk.tokenType t) precedences
