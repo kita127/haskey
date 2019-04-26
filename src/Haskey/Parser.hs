@@ -182,9 +182,8 @@ parseExpressionStatement = do
 parseExpression :: Precedence -> Parser Ast.Expression
 parseExpression precedence = do
     t <- curToken
-    let prefixFn = case M.lookup (Tk.tokenType t) prefixParseFns of
-                    (Just f) -> f
-                    Nothing -> fail . printf "no prefix parse function for %s found" . show .Tk.tokenType $ t
+    let prefixFn  = M.findWithDefault defaultFn (Tk.tokenType t) prefixParseFns
+        defaultFn = fail . printf "no prefix parse function for %s found" . show . Tk.tokenType $ t
     leftExp <- prefixFn
     prattParse precedence leftExp
 
@@ -198,9 +197,8 @@ prattParse precedence leftExp = do
     if not (Tk.tokenIs Tk.Semicolon pk) && precedence < pkPre
     then do
         t <- next peekToken
-        let infixFn = case M.lookup (Tk.tokenType t) infixParseFns of
-                        (Just f) -> f
-                        Nothing -> fail . printf "no infix parse function for %s found" . show . Tk.tokenType $ t
+        let infixFn   = M.findWithDefault defaultFn (Tk.tokenType t) infixParseFns
+            defaultFn = fail . printf "no infix parse function for %s found" . show . Tk.tokenType $ t
 
         infixFn leftExp >>= prattParse precedence
     else return leftExp
