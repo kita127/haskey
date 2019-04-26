@@ -50,7 +50,7 @@ data Statement = LetStatement {
 instance Stringer Statement where
     string (LetStatement t n v)      = Tk.literal t <> " " <> string n <> " = " <> string v <> ";"
     string (ReturnStatement t v)     = Tk.literal t <> " " <> string v <> ";"
-    string (ExpressionStatement _ e) = string e <> ";"
+    string (ExpressionStatement _ e) = string e
     string (FailStatement _ r) = T.pack r
 
 -- TODO:
@@ -88,7 +88,7 @@ instance Stringer Expression where
     string (Identifire _ v)          = v
     string (IntegerLiteral t _)      = Tk.literal t
     string (PrefixExpression _ o r)  = "(" <> o <> string r <> ")"
-    string (InfixExpression _ l o r) = "(" <> string l <> o <> string r <> ")"
+    string (InfixExpression _ l o r) = "(" <> string l <> " " <> o <> " " <> string r <> ")"
 
 
 -- | progra

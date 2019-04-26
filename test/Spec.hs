@@ -19,6 +19,7 @@ main = do
       , testIntegerLiteralExpression
       , testParsingPrefixExpressions
       , testParsingInfixExpressions
+      , testOperatorPrecedenceParsing
       ]
     return ()
 
@@ -222,7 +223,7 @@ subTestIdentifireExpression = Ast.string . Ast.expression . head . Ast.statement
 testIntegerLiteralExpression :: Test
 testIntegerLiteralExpression = TestList
   [ "testIntegerLiteralExpression test 1" ~:
-        (Ast.string . Ps.parse . Lx.lexer) "5;" ~?= "5;"
+        (Ast.string . Ps.parse . Lx.lexer) "5" ~?= "5"
   ]
 
 
@@ -276,3 +277,22 @@ testParsingInfixExpressionsHelper :: Ast.Program -> Either T.Text (Integer, T.Te
 testParsingInfixExpressionsHelper program = case Ast.statements program of
                                                 [(Ast.ExpressionStatement _ (Ast.InfixExpression _ l o r))] -> Right (Ast.intValue l, o, Ast.intValue r)
                                                 _ -> Left $ Ast.string program
+
+-- | testOperatorPrecedenceParsing
+--
+testOperatorPrecedenceParsing :: Test
+testOperatorPrecedenceParsing = TestList
+  [ "testOperatorPrecedenceParsing test 1" ~:
+        (Ast.string . Ps.parse . Lx.lexer) "-a * b" ~?= "((-a) * b)"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "!-a" ~?= "(!(-a))"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "a + b + c" ~?= "((a + b) + c)"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "a + b - c" ~?= "((a + b) - c)"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "a * b * c" ~?= "((a * b) * c)"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "a * b / c" ~?= "((a * b) / c)"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "a + b / c" ~?= "(a + (b / c))"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "a + b * c + d / e - f" ~?= "(((a + (b * c)) + (d / e)) - f)"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "3 + 4; -5 * 5" ~?= "(3 + 4)((-5) * 5)"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "5 > 4 == 3 < 4" ~?= "((5 > 4) == (3 < 4))"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "5 < 4 != 3 > 4" ~?= "((5 < 4) != (3 > 4))"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "3 + 4 * 5 == 3 * 1 + 4 * 5" ~?= "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+  ]
