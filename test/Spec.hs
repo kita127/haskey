@@ -205,12 +205,19 @@ testReturnStatementLiteral :: Ast.Program -> [T.Text]
 testReturnStatementLiteral = map (Tk.literal . Ast.stmtToken) . Ast.statements
 
 
+-- | testIdentifireExpression
 testIdentifireExpression :: Test
 testIdentifireExpression = TestList
   [ "testIdentifireExpression test 1" ~:
-        (Ast.string . Ps.parse . Lx.lexer) "foobar;" ~?= "foobar;"
+        subTestIdentifireExpression "foobar" ~?= "foobar"
+  , "testIdentifireExpression test 2" ~:
+        subTestIdentifireExpression "foobar;" ~?= "foobar"
   ]
 
+subTestIdentifireExpression = Ast.string . Ast.expression . head . Ast.statements . Ps.parse . Lx.lexer
+
+-- | testIntegerLiteralExpression
+--
 testIntegerLiteralExpression :: Test
 testIntegerLiteralExpression = TestList
   [ "testIntegerLiteralExpression test 1" ~:

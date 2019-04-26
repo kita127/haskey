@@ -76,5 +76,8 @@ lookupIdent ident
 
 -- | tokenIs
 --
+-- TODO:
+-- isToken とかに直したい
+--
 tokenIs :: TokenType -> Token -> Bool
 tokenIs tt tok = tokenType tok == tt

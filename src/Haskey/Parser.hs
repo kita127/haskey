@@ -73,6 +73,13 @@ curToken = Parser (\input -> case input of
                            []    -> Fail "empty imput" []
                            (x:_) -> Done x input)
 
+-- | peekToken
+--
+peekToken :: Parser Tk.Token
+peekToken = Parser (\input -> case input of
+                           (_:x:_) -> Done x input
+                           _       -> Fail "empty imput" [])
+
 
 
 ----------------------------------------------------------------------------------------------------
@@ -90,13 +97,17 @@ data Precedence = Lowest
 
 -- | parse
 --
+-- TODO:
+-- parseProgram にしたい
+--
 parse :: [Tk.Token] -> Ast.Program
 parse = Ast.program . result
   where
     result ts
         | (Tk.tokenIs Tk.Eof . head) ts = []
         | otherwise = case runParser parseStatement ts of
-            (Done a r)           -> a : result r
+            -- 前の statement 最後のトークンで終わっているので次にトークンを進める
+            (Done a (_:rs))      -> a : result rs
             (Fail reason (r:rs)) -> newFailStmt r reason : result rs
 
 -- | newFailStmt
@@ -119,20 +130,17 @@ parseStatement = do
 parseExpressionStatement :: Parser Ast.Statement
 parseExpressionStatement = do
     t <- curToken
-    exp <- parseExpression Lowest
-    consumeOneOrZero parseSemicolon
-    return $ Ast.ExpressionStatement t exp
+    expression <- parseExpression Lowest
+
+    -- カレントトークンの次がセミコロンならそこまで進める
+    (next . parsePeek) Tk.Semicolon <|> curToken
+    return $ Ast.ExpressionStatement t expression
 
 
 -- | parseExpression
 --
 parseExpression :: Precedence -> Parser Ast.Expression
-parseExpression _ = prefixExpression
-
--- prefixExpression
---
-prefixExpression :: Parser Ast.Expression
-prefixExpression = do
+parseExpression _ = do
     t <- curToken
     case Tk.tokenType t of
         Tk.Ident -> parseIdentifire
@@ -141,16 +149,16 @@ prefixExpression = do
         Tk.Minus -> parsePrefixExpression
         _ -> fail . printf "no prefix parse function for %s found" . show . Tk.tokenType $ t
 
+
 -- | parseReturnStatement
 --
 parseReturnStatement :: Parser Ast.Statement
 parseReturnStatement = do
-    t <- parseReturn
+    t <- next parseReturn
     -- value <- parseExpression
 
     -- TODO: セミコロンまで読み飛ばしている
     takeWhileToken Tk.Semicolon
-    parseSemicolon
 
     return $ Ast.ReturnStatement t Ast.Nil
 
@@ -163,14 +171,13 @@ parseReturn = parseToken Tk.Return
 --
 parseLetStatement :: Parser Ast.Statement
 parseLetStatement = do
-    t <- parseLet
-    name <- parseIdentifire
-    parseAssign
+    t <- next parseLet
+    name <- next parseIdentifire
+    next parseAssign
 --    value <- parseExpression
 
     -- TODO: セミコロンまで読み飛ばしている
     takeWhileToken Tk.Semicolon
-    parseSemicolon
     return $ Ast.LetStatement t name Ast.Nil
 
 
@@ -193,8 +200,7 @@ parseSemicolon = parseToken Tk.Semicolon
 --
 parsePrefixExpression :: Parser Ast.Expression
 parsePrefixExpression = do
-    t <- curToken
-    nextToken
+    t <- next curToken
     r <- parseExpression Prefix
     return $ Ast.PrefixExpression t (Tk.literal t) r
 
@@ -202,7 +208,7 @@ parsePrefixExpression = do
 --
 parseIdentifire :: Parser Ast.Expression
 parseIdentifire = do
-    t <- parseToken Tk.Ident
+    t <- curToken
     return $ Ast.Identifire t (Tk.literal t)
 
 -- | parseIntegerLiteral
@@ -230,8 +236,20 @@ parseToken :: Tk.TokenType -> Parser Tk.Token
 parseToken expected = do
     t <- curToken
     if Tk.tokenIs expected t
-        then nextToken
+        then return t
         else fail (printf "invalid token:%s expected token type:%s" (show t) (show expected))
+
+-- | parsePeek
+--
+-- TODO:
+-- Token 全て表示すると情報過多のためタイプだけとかに検討する
+--
+parsePeek :: Tk.TokenType -> Parser Tk.Token
+parsePeek expected = do
+    t <- peekToken
+    if Tk.tokenIs expected t
+        then return t
+        else fail (printf "invalid peek token:%s expected peek token type:%s" (show t) (show expected))
 
 -- | takeWhileToken
 --
@@ -242,7 +260,7 @@ takeWhileToken target = do
         then return ()
         else nextToken >> takeWhileToken target
 
--- | consumeOneOrZero
+-- | next
 --
-consumeOneOrZero :: Parser a -> Parser ()
-consumeOneOrZero p = p >> pure () <|> pure ()
+next :: Parser a -> Parser a
+next p = p <* nextToken
