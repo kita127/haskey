@@ -201,9 +201,8 @@ prattParse precedence leftExp = do
         let infixFn = case M.lookup (Tk.tokenType t) infixParseFns of
                         (Just f) -> f
                         Nothing -> fail . printf "no infix parse function for %s found" . show . Tk.tokenType $ t
-        leftExp' <- infixFn leftExp
-        prattParse precedence leftExp'
 
+        infixFn leftExp >>= prattParse precedence
     else return leftExp
 
 
@@ -274,17 +273,12 @@ parsePrefixExpression = do
 -- | parseIdentifire
 --
 parseIdentifire :: Parser Ast.Expression
-parseIdentifire = do
-    t <- curToken
-    return $ Ast.Identifire t (Tk.literal t)
+parseIdentifire = Ast.Identifire <$> curToken <*> fmap Tk.literal curToken
 
 -- | parseIntegerLiteral
 --
 parseIntegerLiteral :: Parser Ast.Expression
-parseIntegerLiteral = do
-    t <- curToken
-    v <- parseInteger
-    return $ Ast.IntegerLiteral t v
+parseIntegerLiteral = Ast.IntegerLiteral <$> curToken <*> parseInteger
 
 -- | parseInteger
 --
