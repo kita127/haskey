@@ -14,6 +14,9 @@ data Token = Token
              }
              deriving (Eq, Show)
 
+-- TODO:
+-- TRUE, FALSE だけ大文字なんかいやだ
+--
 data TokenType = Illegal
                | Eof
 

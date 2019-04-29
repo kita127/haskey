@@ -20,6 +20,7 @@ main = do
       , testParsingPrefixExpressions
       , testParsingInfixExpressions
       , testOperatorPrecedenceParsing
+      , testBooleanExpression
       ]
     return ()
 
@@ -211,12 +212,12 @@ testReturnStatementLiteral = map (Tk.literal . Ast.stmtToken) . Ast.statements
 testIdentifireExpression :: Test
 testIdentifireExpression = TestList
   [ "testIdentifireExpression test 1" ~:
-        subTestIdentifireExpression "foobar" ~?= "foobar"
+        subTestExpression "foobar" ~?= "foobar"
   , "testIdentifireExpression test 2" ~:
-        subTestIdentifireExpression "foobar;" ~?= "foobar"
+        subTestExpression "foobar;" ~?= "foobar"
   ]
 
-subTestIdentifireExpression = Ast.string . Ast.expression . head . Ast.statements . Ps.parse . Lx.lexer
+subTestExpression = Ast.string . Ast.expression . head . Ast.statements . Ps.parse . Lx.lexer
 
 -- | testIntegerLiteralExpression
 --
@@ -271,12 +272,26 @@ testParsingInfixExpressions = TestList
   ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 != 5;" ~?=
             Right (5, "!=", 5)
 
+  ,     (testInfixBoolean . Ps.parse . Lx.lexer) "true == true" ~?=
+            Right (True, "==", True)
+
+  ,     (testInfixBoolean . Ps.parse . Lx.lexer) "true != false" ~?=
+            Right (True, "!=", False)
+
+  ,     (testInfixBoolean . Ps.parse . Lx.lexer) "false == false" ~?=
+            Right (False, "==", False)
+
   ]
 
 testParsingInfixExpressionsHelper :: Ast.Program -> Either T.Text (Integer, T.Text, Integer)
 testParsingInfixExpressionsHelper program = case Ast.statements program of
                                                 [(Ast.ExpressionStatement _ (Ast.InfixExpression _ l o r))] -> Right (Ast.intValue l, o, Ast.intValue r)
                                                 _ -> Left $ Ast.string program
+
+testInfixBoolean :: Ast.Program -> Either T.Text (Bool, T.Text, Bool)
+testInfixBoolean program = case Ast.statements program of
+                               [(Ast.ExpressionStatement _ (Ast.InfixExpression _ l o r))] -> Right (Ast.boolValue l, o, Ast.boolValue r)
+                               _ -> Left $ Ast.string program
 
 -- | testOperatorPrecedenceParsing
 --
@@ -295,4 +310,18 @@ testOperatorPrecedenceParsing = TestList
   ,     (Ast.string . Ps.parse . Lx.lexer) "5 > 4 == 3 < 4" ~?= "((5 > 4) == (3 < 4))"
   ,     (Ast.string . Ps.parse . Lx.lexer) "5 < 4 != 3 > 4" ~?= "((5 < 4) != (3 > 4))"
   ,     (Ast.string . Ps.parse . Lx.lexer) "3 + 4 * 5 == 3 * 1 + 4 * 5" ~?= "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+
+  ,     (Ast.string . Ps.parse . Lx.lexer) "true" ~?= "true"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "false" ~?= "false"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "3 > 5 == false" ~?= "((3 > 5) == false)"
+  ,     (Ast.string . Ps.parse . Lx.lexer) "3 < 5 == true" ~?= "((3 < 5) == true)"
+  ]
+
+-- | testBooleanExpression
+testBooleanExpression :: Test
+testBooleanExpression = TestList
+  [ "testBooleanExpression test 1" ~:
+        subTestExpression "true" ~?= "true"
+  , "testBooleanExpression test 2" ~:
+        subTestExpression "false" ~?= "false"
   ]

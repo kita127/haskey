@@ -118,6 +118,8 @@ prefixParseFns = M.fromList [
                  , (Tk.Int, parseIntegerLiteral)
                  , (Tk.Bang, parsePrefixExpression)
                  , (Tk.Minus, parsePrefixExpression)
+                 , (Tk.TRUE, parseBoolean)
+                 , (Tk.FALSE, parseBoolean)
                  ]
 
 -- | infixParseFns
@@ -267,6 +269,18 @@ parsePrefixExpression = do
     t <- next curToken
     r <- parseExpression Prefix
     return $ Ast.PrefixExpression t (Tk.literal t) r
+
+-- | parseBoolean
+--
+parseBoolean :: Parser Ast.Expression
+parseBoolean = Ast.Boolean <$> curToken <*> parseBool
+
+
+-- | parseBool
+--
+parseBool :: Parser Bool
+parseBool = fmap (Tk.tokenIs Tk.TRUE) curToken
+
 
 -- | parseIdentifire
 --

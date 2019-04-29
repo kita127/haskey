@@ -81,6 +81,10 @@ data Expression = Nil
                   , operator :: T.Text
                   , right    :: Expression
                   }
+                | Boolean {
+                    expToken  :: Tk.Token
+                  , boolValue :: Bool
+                  }
                 deriving (Eq, Show)
 
 instance Stringer Expression where
@@ -89,6 +93,7 @@ instance Stringer Expression where
     string (IntegerLiteral t _)      = Tk.literal t
     string (PrefixExpression _ o r)  = "(" <> o <> string r <> ")"
     string (InfixExpression _ l o r) = "(" <> string l <> " " <> o <> " " <> string r <> ")"
+    string (Boolean t _) = Tk.literal t
 
 
 -- | progra
