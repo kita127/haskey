@@ -227,71 +227,83 @@ testIntegerLiteralExpression = TestList
         (Ast.string . Ps.parse . Lx.lexer) "5" ~?= "5"
   ]
 
+data Ex = ExInt Integer | ExBool Bool | DontCare
+    deriving (Eq, Show)
 
+
+testExpressionContents :: Ast.Program -> Either T.Text (Ex, T.Text, Ex)
+testExpressionContents program = case Ast.statements program of
+                               [(Ast.ExpressionStatement _ (Ast.InfixExpression _ l o r))] -> Right (testExpressionMenber l, o, testExpressionMenber r)
+                               [(Ast.ExpressionStatement _ (Ast.PrefixExpression _ o r))] -> Right (DontCare, o, testExpressionMenber r)
+                               _ -> Left $ Ast.string program
+
+testExpressionMenber :: Ast.Expression -> Ex
+testExpressionMenber (Ast.IntegerLiteral _ v) = ExInt v
+testExpressionMenber (Ast.Boolean _ v)        = ExBool v
+
+
+-- | testParsingPrefixExpressions
+--
 testParsingPrefixExpressions :: Test
 testParsingPrefixExpressions = TestList
   [ "testParsingPrefixExpressions test 1" ~:
-        (testPrefixExpressionHelper . head . Ast.statements . Ps.parse . Lx.lexer) "!5;" ~?=
-            Right ("!", 5)
+        (testExpressionContents . Ps.parse . Lx.lexer) "!5;" ~?=
+            Right (DontCare, "!", ExInt 5)
 
   , "testParsingPrefixExpressions test 2" ~:
-        (testPrefixExpressionHelper . head . Ast.statements . Ps.parse . Lx.lexer) "-15;" ~?=
-            Right ("-", 15)
+        (testExpressionContents . Ps.parse . Lx.lexer) "-15;" ~?=
+            Right (DontCare, "-", ExInt 15)
+
+  , "testParsingPrefixExpressions test 3" ~:
+        (testExpressionContents . Ps.parse . Lx.lexer) "!true" ~?=
+            Right (DontCare, "!", ExBool True)
+
+  , "testParsingPrefixExpressions test 4" ~:
+        (testExpressionContents . Ps.parse . Lx.lexer) "!false" ~?=
+            Right (DontCare, "!", ExBool False)
   ]
 
-testPrefixExpressionHelper :: Ast.Statement -> Either T.Text (T.Text, Integer)
-testPrefixExpressionHelper (Ast.ExpressionStatement t e) = Right (Ast.operator e, Ast.intValue $ Ast.right e)
-testPrefixExpressionHelper stmt = Left $ Ast.string stmt
 
 -- | testParsingInfixExpressions
 --
 testParsingInfixExpressions :: Test
 testParsingInfixExpressions = TestList
   [ "testParsingInfixExpressions test 1" ~:
-        (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 + 5;" ~?=
-            Right (5, "+", 5)
+        (testExpressionContents . Ps.parse . Lx.lexer) "5 + 5;" ~?=
+            Right (ExInt 5, "+", ExInt 5)
 
-  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 - 5;" ~?=
-            Right (5, "-", 5)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 - 5;" ~?=
+            Right (ExInt 5, "-", ExInt 5)
 
-  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 * 5;" ~?=
-            Right (5, "*", 5)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 * 5;" ~?=
+            Right (ExInt 5, "*", ExInt 5)
 
-  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 / 5;" ~?=
-            Right (5, "/", 5)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 / 5;" ~?=
+            Right (ExInt 5, "/", ExInt 5)
 
-  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 > 5;" ~?=
-            Right (5, ">", 5)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 > 5;" ~?=
+            Right (ExInt 5, ">", ExInt 5)
 
-  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 < 5;" ~?=
-            Right (5, "<", 5)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 < 5;" ~?=
+            Right (ExInt 5, "<", ExInt 5)
 
-  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 == 5;" ~?=
-            Right (5, "==", 5)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 == 5;" ~?=
+            Right (ExInt 5, "==", ExInt 5)
 
-  ,     (testParsingInfixExpressionsHelper . Ps.parse . Lx.lexer) "5 != 5;" ~?=
-            Right (5, "!=", 5)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 != 5;" ~?=
+            Right (ExInt 5, "!=", ExInt 5)
 
-  ,     (testInfixBoolean . Ps.parse . Lx.lexer) "true == true" ~?=
-            Right (True, "==", True)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "true == true" ~?=
+            Right (ExBool True, "==", ExBool True)
 
-  ,     (testInfixBoolean . Ps.parse . Lx.lexer) "true != false" ~?=
-            Right (True, "!=", False)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "true != false" ~?=
+            Right (ExBool True, "!=", ExBool False)
 
-  ,     (testInfixBoolean . Ps.parse . Lx.lexer) "false == false" ~?=
-            Right (False, "==", False)
+  ,     (testExpressionContents . Ps.parse . Lx.lexer) "false == false" ~?=
+            Right (ExBool False, "==", ExBool False)
 
   ]
 
-testParsingInfixExpressionsHelper :: Ast.Program -> Either T.Text (Integer, T.Text, Integer)
-testParsingInfixExpressionsHelper program = case Ast.statements program of
-                                                [(Ast.ExpressionStatement _ (Ast.InfixExpression _ l o r))] -> Right (Ast.intValue l, o, Ast.intValue r)
-                                                _ -> Left $ Ast.string program
-
-testInfixBoolean :: Ast.Program -> Either T.Text (Bool, T.Text, Bool)
-testInfixBoolean program = case Ast.statements program of
-                               [(Ast.ExpressionStatement _ (Ast.InfixExpression _ l o r))] -> Right (Ast.boolValue l, o, Ast.boolValue r)
-                               _ -> Left $ Ast.string program
 
 -- | testOperatorPrecedenceParsing
 --
@@ -322,6 +334,7 @@ testBooleanExpression :: Test
 testBooleanExpression = TestList
   [ "testBooleanExpression test 1" ~:
         subTestExpression "true" ~?= "true"
+
   , "testBooleanExpression test 2" ~:
         subTestExpression "false" ~?= "false"
   ]
