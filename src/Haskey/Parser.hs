@@ -120,6 +120,7 @@ prefixParseFns = M.fromList [
                  , (Tk.Minus, parsePrefixExpression)
                  , (Tk.TRUE, parseBoolean)
                  , (Tk.FALSE, parseBoolean)
+                 , (Tk.Lparen, parseGroupedExpression)
                  ]
 
 -- | infixParseFns
@@ -281,6 +282,14 @@ parseBoolean = Ast.Boolean <$> curToken <*> parseBool
 parseBool :: Parser Bool
 parseBool = fmap (Tk.tokenIs Tk.TRUE) curToken
 
+-- | parseGroupedExpression
+--
+parseGroupedExpression :: Parser Ast.Expression
+parseGroupedExpression = do
+    nextToken
+    expression <- parseExpression(Lowest)
+    next (parsePeek Tk.Rparen)
+    return expression
 
 -- | parseIdentifire
 --
@@ -304,6 +313,8 @@ parseInteger = do
 --
 -- TODO:
 -- Token 全て表示すると情報過多のためタイプだけとかに検討する
+-- TODO:
+-- expectedCur とかにかえる
 --
 parseToken :: Tk.TokenType -> Parser Tk.Token
 parseToken expected = do
@@ -316,6 +327,8 @@ parseToken expected = do
 --
 -- TODO:
 -- Token 全て表示すると情報過多のためタイプだけとかに検討する
+-- TODO:
+-- expectedPeek のとかにかえる
 --
 parsePeek :: Tk.TokenType -> Parser Tk.Token
 parsePeek expected = do

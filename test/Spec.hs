@@ -329,6 +329,17 @@ testOperatorPrecedenceParsing = TestList
   ,     testHelper "false" ~?= "false"
   ,     testHelper "3 > 5 == false" ~?= "((3 > 5) == false)"
   ,     testHelper "3 < 5 == true" ~?= "((3 < 5) == true)"
+
+  , "testOperatorPrecedenceParsing paren test 1" ~:
+        testHelper "1 + (2 + 3) + 4" ~?= "((1 + (2 + 3)) + 4)"
+  , "testOperatorPrecedenceParsing paren test 2" ~:
+        testHelper "(5 + 5) * 2" ~?= "((5 + 5) * 2)"
+  , "testOperatorPrecedenceParsing paren test 3" ~:
+        testHelper "2 / (5 + 5)" ~?= "(2 / (5 + 5))"
+  , "testOperatorPrecedenceParsing paren test 4" ~:
+        testHelper "-(5 + 5)" ~?= "(-(5 + 5))"
+  , "testOperatorPrecedenceParsing paren test 5" ~:
+        testHelper "!(true == true)" ~?= "(!(true == true))"
   ]
   where
     testHelper = Ast.string . Ps.parse . Lx.lexer
