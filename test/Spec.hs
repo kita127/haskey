@@ -21,6 +21,7 @@ main = do
       , testParsingInfixExpressions
       , testOperatorPrecedenceParsing
       , testBooleanExpression
+      , testIfExpression
       ]
     return ()
 
@@ -227,7 +228,7 @@ testIntegerLiteralExpression = TestList
         (Ast.string . Ps.parse . Lx.lexer) "5" ~?= "5"
   ]
 
-data Ex = ExInt Integer | ExBool Bool | DontCare
+data Ex = ExIdent T.Text | ExInt Integer | ExBool Bool | ExOp T.Text | DontCare
     deriving (Eq, Show)
 
 
@@ -235,6 +236,7 @@ testExpressionContents :: Ast.Program -> Either T.Text (Ex, T.Text, Ex)
 testExpressionContents program = case Ast.statements program of
                                [(Ast.ExpressionStatement _ (Ast.InfixExpression _ l o r))] -> Right (testExpressionMenber l, o, testExpressionMenber r)
                                [(Ast.ExpressionStatement _ (Ast.PrefixExpression _ o r))] -> Right (DontCare, o, testExpressionMenber r)
+                               [(Ast.ExpressionStatement _ (Ast.Identifire _ v))] -> Right (DontCare, "", ExIdent v)
                                _ -> Left $ Ast.string program
 
 testExpressionMenber :: Ast.Expression -> Ex
@@ -353,3 +355,76 @@ testBooleanExpression = TestList
   , "testBooleanExpression test 2" ~:
         subTestExpression "false" ~?= "false"
   ]
+
+-- | testIfExpression
+--
+testIfExpression :: Test
+testIfExpression = TestList
+  [ "testIfExpression test 1" ~:
+        --                                      program Statements length
+        --                                      condition expression
+        --                                      consequence statements length
+        --                                      consequence expression
+        --                                      is alternative nil
+        --                                      (alternative statements length)
+        --                                      (alternative expression)
+        testHelper1 "if (x < y) { x }" ~?= ( 1
+                                          , [ExIdent "x", ExOp "<", ExIdent "y"]
+                                          , 1
+                                          , [ExIdent "x"]
+                                          , True
+                                          )
+  , "testIfExpression test 2" ~:
+        --                                      program Statements length
+        --                                      condition expression
+        --                                      consequence statements length
+        --                                      consequence expression
+        --                                      is alternative nil
+        --                                      (alternative statements length)
+        --                                      (alternative expression)
+        testHelper2 "if (x < y) { x } else { y }" ~?= ( 1
+                                           , [ExIdent "x", ExOp "<", ExIdent "y"]
+                                           , 1
+                                           , [ExIdent "x"]
+                                           , False
+                                           , 1
+                                           , [ExIdent "y"]
+                                           )
+  ]
+
+  where
+    testHelper1 s = let prg = (Ps.parse . Lx.lexer) s in ( programStatementsLen prg
+                                                         , conditionExpression prg
+                                                         , consequenceStmtsLen prg
+                                                         , consequenceExpContents prg
+                                                         , isAlternativeNil prg
+                                                         )
+
+    testHelper2 s = let prg = (Ps.parse . Lx.lexer) s in ( programStatementsLen prg
+                                                         , conditionExpression prg
+                                                         , consequenceStmtsLen prg
+                                                         , consequenceExpContents prg
+                                                         , isAlternativeNil prg
+                                                         , alternativeStmtsLen prg
+                                                         , alternativeExpContents prg
+                                                         )
+    stmts = Ast.statements
+    stmt = head . stmts
+    expression = Ast.expression . stmt
+    consequenceStmts = Ast.stmtStatements . Ast.consequence . expression
+    alternativeStmts = Ast.stmtStatements . Ast.alternative . expression
+    programStatementsLen = length . stmts
+    conditionExpression = testExpressionContents2 . Ast.condition . expression
+    consequenceStmtsLen = length . consequenceStmts
+    consequenceExpContents = testExpressionContents2 . Ast.expression . head . consequenceStmts
+    alternativeStmtsLen = length . alternativeStmts
+    alternativeExpContents = testExpressionContents2 . Ast.expression . head . alternativeStmts
+    isAlternativeNil =  (== Ast.NilStatement) . Ast.alternative . expression
+
+testExpressionContents2 :: Ast.Expression -> [Ex]
+testExpressionContents2 (Ast.Identifire _ v) = [ExIdent v]
+testExpressionContents2 (Ast.IntegerLiteral _ v) = [ExInt v]
+testExpressionContents2 (Ast.Boolean _ v)        = [ExBool v]
+testExpressionContents2 (Ast.InfixExpression _ l op r)        =  testExpressionContents2 l
+                                                                    ++ [ExOp op]
+                                                                    ++ testExpressionContents2 r

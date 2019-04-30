@@ -120,6 +120,7 @@ prefixParseFns = M.fromList [
                  , (Tk.Minus, parsePrefixExpression)
                  , (Tk.TRUE, parseBoolean)
                  , (Tk.FALSE, parseBoolean)
+                 , (Tk.If, parseIfExpression)
                  , (Tk.Lparen, parseGroupedExpression)
                  ]
 
@@ -282,6 +283,35 @@ parseBoolean = Ast.Boolean <$> curToken <*> parseBool
 parseBool :: Parser Bool
 parseBool = fmap (Tk.tokenIs Tk.TRUE) curToken
 
+-- | parseIfExpression
+--
+parseIfExpression :: Parser Ast.Expression
+parseIfExpression = do
+    t <- nextToken
+    condition <- parentheses (parseExpression Lowest)
+    nextToken
+    consequence <- parseBlockStatement
+    alternative <- parseElseExpression <|> pure Ast.NilStatement
+    return $ Ast.IfExpression t condition consequence alternative
+
+-- | parseElseExpression
+--
+parseElseExpression :: Parser Ast.Statement
+parseElseExpression = do
+    next $ parsePeek Tk.Else
+    next $ parsePeek Tk.Lbrace
+    parseBlockStatement
+
+-- | parseBlockStatement
+--
+parseBlockStatement :: Parser Ast.Statement
+parseBlockStatement = do
+    t <- next (parseToken Tk.Lbrace)
+    stmts <- many (next parseStatement)
+    parseToken Tk.Rbrace
+    return $ Ast.BlockStatement t stmts
+
+
 -- | parseGroupedExpression
 --
 parseGroupedExpression :: Parser Ast.Expression
@@ -293,6 +323,9 @@ parseGroupedExpression = do
     -- Goインタプリタ本では次のトークンが閉じ括弧かどうかだけを確かめて、トークンは進めていない
     -- しかしここで前に進めないと「式パースの終わりはその式の最後のトークン」の原則
     -- に反するため、Haskey ではトークンを前に進める。Go 版がトークンを進めないのは現状で不明
+    --
+    -- > Go 版は expectPeek が成功したらトークンを次に進める
+    --
     next (parsePeek Tk.Rparen)
     return expression
 
@@ -313,6 +346,14 @@ parseInteger = do
     v <- parseToken Tk.Int
     let intV = read . T.unpack . Tk.literal $ v :: Integer
     return intV
+
+-- | parentheses
+--
+parentheses :: Parser a -> Parser a
+parentheses p = next (parseToken Tk.Lparen) *> p <* next (parsePeek Tk.Rparen)
+
+
+
 
 -- | parseToken
 --

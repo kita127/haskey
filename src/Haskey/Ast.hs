@@ -41,17 +41,24 @@ data Statement = LetStatement {
                    stmtToken  :: Tk.Token
                  , expression :: Expression
                  }
+               | BlockStatement {
+                   stmtToken      :: Tk.Token
+                 , stmtStatements :: [Statement]
+                 }
                | FailStatement {
                    stmtToken :: Tk.Token
                  , reason    :: String
                  }
+               | NilStatement           -- else がない場合の値
                deriving (Eq, Show)
 
 instance Stringer Statement where
     string (LetStatement t n v)      = Tk.literal t <> " " <> string n <> " = " <> string v <> ";"
     string (ReturnStatement t v)     = Tk.literal t <> " " <> string v <> ";"
     string (ExpressionStatement _ e) = string e
+    string (BlockStatement _ ss) = T.concat . map string $ ss
     string (FailStatement _ r) = T.pack r
+    string NilStatement = ""
 
 -- TODO:
 -- Nil は最終的に削除
@@ -85,6 +92,12 @@ data Expression = Nil
                     expToken  :: Tk.Token
                   , boolValue :: Bool
                   }
+                | IfExpression {
+                    expToken    :: Tk.Token
+                  , condition   :: Expression
+                  , consequence :: Statement    -- BlockStatement
+                  , alternative :: Statement    -- BlockStatement
+                  }
                 deriving (Eq, Show)
 
 instance Stringer Expression where
@@ -94,6 +107,11 @@ instance Stringer Expression where
     string (PrefixExpression _ o r)  = "(" <> o <> string r <> ")"
     string (InfixExpression _ l o r) = "(" <> string l <> " " <> o <> " " <> string r <> ")"
     string (Boolean t _) = Tk.literal t
+    string (IfExpression t cond cons alt) = "if " <> string cond <> " " <> string cons <> elseStr alt
+
+
+elseStr b@(BlockStatement _ _) = "else " <> string b
+elseStr stmt                   = string stmt
 
 
 -- | progra
