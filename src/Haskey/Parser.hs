@@ -288,6 +288,11 @@ parseGroupedExpression :: Parser Ast.Expression
 parseGroupedExpression = do
     nextToken
     expression <- parseExpression(Lowest)
+
+    -- NOTE:
+    -- Goインタプリタ本では次のトークンが閉じ括弧かどうかだけを確かめて、トークンは進めていない
+    -- しかしここで前に進めないと「式パースの終わりはその式の最後のトークン」の原則
+    -- に反するため、Haskey ではトークンを前に進める。Go 版がトークンを進めないのは現状で不明
     next (parsePeek Tk.Rparen)
     return expression
 
