@@ -9,6 +9,9 @@ import           Haskey.Token as Tk
 
 -- | lexer
 --
+-- TODO:
+-- lexer は関数名的に微妙なので変更を検討
+--
 lexer :: T.Text -> [Tk.Token]
 lexer s
     | Tk.tokenType tok == Tk.Eof = [tok]
