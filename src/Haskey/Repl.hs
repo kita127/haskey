@@ -1,8 +1,12 @@
-module Haskey.Repl () where
+module Haskey.Repl (
+  start
+) where
 
-import qualified Data.Text    as T
-import qualified Data.Text.IO as TO
+import qualified Data.Text     as T
+import qualified Data.Text.IO  as TIO
+import           Haskey.Ast
 import           Haskey.Lexer
+import           Haskey.Parser
 import           Haskey.Token
 
 prompt = ">> "
@@ -12,8 +16,8 @@ prompt = ">> "
 start :: IO ()
 start = do
     putStr prompt
-    l <- TO.getLine
-    let ts = lexer l
-    mapM_ (putStrLn . show) ts
+    l <- TIO.getLine
+    let prg = (parse . lexer) l
+    TIO.putStrLn $ string prg
     start
 

@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import           Haskey.Repl
 
 main :: IO ()
-main = someFunc
+main = start
