@@ -269,40 +269,42 @@ testParsingPrefixExpressions = TestList
 testParsingInfixExpressions :: Test
 testParsingInfixExpressions = TestList
   [ "testParsingInfixExpressions test 1" ~:
-        (testExpressionContents . Ps.parse . Lx.lexer) "5 + 5;" ~?=
+        testHelper "5 + 5;" ~?=
             Right (ExInt 5, "+", ExInt 5)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 - 5;" ~?=
+  ,     testHelper "5 - 5;" ~?=
             Right (ExInt 5, "-", ExInt 5)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 * 5;" ~?=
+  ,     testHelper "5 * 5;" ~?=
             Right (ExInt 5, "*", ExInt 5)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 / 5;" ~?=
+  ,     testHelper "5 / 5;" ~?=
             Right (ExInt 5, "/", ExInt 5)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 > 5;" ~?=
+  ,     testHelper "5 > 5;" ~?=
             Right (ExInt 5, ">", ExInt 5)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 < 5;" ~?=
+  ,     testHelper "5 < 5;" ~?=
             Right (ExInt 5, "<", ExInt 5)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 == 5;" ~?=
+  ,     testHelper "5 == 5;" ~?=
             Right (ExInt 5, "==", ExInt 5)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "5 != 5;" ~?=
+  ,     testHelper "5 != 5;" ~?=
             Right (ExInt 5, "!=", ExInt 5)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "true == true" ~?=
+  ,     testHelper "true == true" ~?=
             Right (ExBool True, "==", ExBool True)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "true != false" ~?=
+  ,     testHelper "true != false" ~?=
             Right (ExBool True, "!=", ExBool False)
 
-  ,     (testExpressionContents . Ps.parse . Lx.lexer) "false == false" ~?=
+  ,     testHelper "false == false" ~?=
             Right (ExBool False, "==", ExBool False)
 
   ]
+  where
+    testHelper = testExpressionContents . Ps.parse . Lx.lexer
 
 
 -- | testOperatorPrecedenceParsing
@@ -310,24 +312,26 @@ testParsingInfixExpressions = TestList
 testOperatorPrecedenceParsing :: Test
 testOperatorPrecedenceParsing = TestList
   [ "testOperatorPrecedenceParsing test 1" ~:
-        (Ast.string . Ps.parse . Lx.lexer) "-a * b" ~?= "((-a) * b)"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "!-a" ~?= "(!(-a))"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "a + b + c" ~?= "((a + b) + c)"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "a + b - c" ~?= "((a + b) - c)"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "a * b * c" ~?= "((a * b) * c)"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "a * b / c" ~?= "((a * b) / c)"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "a + b / c" ~?= "(a + (b / c))"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "a + b * c + d / e - f" ~?= "(((a + (b * c)) + (d / e)) - f)"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "3 + 4; -5 * 5" ~?= "(3 + 4)((-5) * 5)"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "5 > 4 == 3 < 4" ~?= "((5 > 4) == (3 < 4))"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "5 < 4 != 3 > 4" ~?= "((5 < 4) != (3 > 4))"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "3 + 4 * 5 == 3 * 1 + 4 * 5" ~?= "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+        testHelper "-a * b" ~?= "((-a) * b)"
+  ,     testHelper "!-a" ~?= "(!(-a))"
+  ,     testHelper "a + b + c" ~?= "((a + b) + c)"
+  ,     testHelper "a + b - c" ~?= "((a + b) - c)"
+  ,     testHelper "a * b * c" ~?= "((a * b) * c)"
+  ,     testHelper "a * b / c" ~?= "((a * b) / c)"
+  ,     testHelper "a + b / c" ~?= "(a + (b / c))"
+  ,     testHelper "a + b * c + d / e - f" ~?= "(((a + (b * c)) + (d / e)) - f)"
+  ,     testHelper "3 + 4; -5 * 5" ~?= "(3 + 4)((-5) * 5)"
+  ,     testHelper "5 > 4 == 3 < 4" ~?= "((5 > 4) == (3 < 4))"
+  ,     testHelper "5 < 4 != 3 > 4" ~?= "((5 < 4) != (3 > 4))"
+  ,     testHelper "3 + 4 * 5 == 3 * 1 + 4 * 5" ~?= "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
 
-  ,     (Ast.string . Ps.parse . Lx.lexer) "true" ~?= "true"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "false" ~?= "false"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "3 > 5 == false" ~?= "((3 > 5) == false)"
-  ,     (Ast.string . Ps.parse . Lx.lexer) "3 < 5 == true" ~?= "((3 < 5) == true)"
+  ,     testHelper "true" ~?= "true"
+  ,     testHelper "false" ~?= "false"
+  ,     testHelper "3 > 5 == false" ~?= "((3 > 5) == false)"
+  ,     testHelper "3 < 5 == true" ~?= "((3 < 5) == true)"
   ]
+  where
+    testHelper = Ast.string . Ps.parse . Lx.lexer
 
 -- | testBooleanExpression
 testBooleanExpression :: Test
