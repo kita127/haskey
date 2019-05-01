@@ -15,7 +15,7 @@ prompt = ">> "
 --
 start :: IO ()
 start = do
-    putStr prompt
+    putStrLn prompt
     l <- TIO.getLine
     let prg = (parse . lexer) l
     TIO.putStrLn $ string prg
