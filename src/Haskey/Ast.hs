@@ -103,6 +103,11 @@ data Expression = Nil
                   , parameters :: [Expression]    -- Identifire
                   , body       :: Statement       -- BlockStatement
                   }
+                | CallExpression {
+                    expToken  :: Tk.Token
+                  , function  :: Expression    -- Identifire or FunctionLiteral
+                  , arguments :: [Expression]
+                  }
                 deriving (Eq, Show)
 
 instance Stringer Expression where
@@ -114,6 +119,7 @@ instance Stringer Expression where
     string (Boolean t _) = Tk.literal t
     string (IfExpression _ cond cons alt) = "if " <> string cond <> " " <> string cons <> elseStr alt
     string (FunctionLiteral _ ps b) = "fn" <> "(" <> T.intercalate ", " (map string ps) <> ")" <> string b
+    string (CallExpression _ f as) = string f <> "(" <> T.intercalate ", " (map string as) <> ")"
 
 
 elseStr :: Statement -> T.Text

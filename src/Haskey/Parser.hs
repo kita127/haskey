@@ -111,6 +111,7 @@ precedences = M.fromList [
               , (Tk.Minus, Sum)
               , (Tk.Slash, Product)
               , (Tk.Asterisk, Product)
+              , (Tk.Lparen, Call)
               ]
 
 -- | prefixParseFns
@@ -140,6 +141,7 @@ infixParseFns = M.fromList [
                 , (Tk.NotEq, parseInfixExpression)
                 , (Tk.Lt, parseInfixExpression)
                 , (Tk.Gt, parseInfixExpression)
+                , (Tk.Lparen, parseCallExpression)
                 ]
 
 
@@ -348,6 +350,15 @@ sepBy p tokType = someParams <|> return []
         r <- p
         (next . next . parsePeek) Tk.Comma *> fmap (r:) (sepBy p tokType)
             <|> next (return [r])
+
+-- | parseCallExpression
+--
+parseCallExpression :: Ast.Expression -> Parser Ast.Expression
+parseCallExpression function = Ast.CallExpression
+                               <$> next (parseToken Tk.Lparen)
+                               <*> pure function
+                               <*> sepBy (parseExpression Lowest) Tk.Comma
+                               <*  parseToken Tk.Rparen
 
 
 -- | parseGroupedExpression

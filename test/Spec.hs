@@ -23,6 +23,7 @@ main = do
       , testBooleanExpression
       , testIfExpression
       , testFunctionLiteral
+      , testCallExpressionParsing
       ]
     return ()
 
@@ -189,6 +190,9 @@ _firstStatement = head . _statements
 
 fetchFirstExpression = Ast.expression . head . Ast.statements . Ps.parse . Lx.lexer
 
+isExpStmt (Ast.ExpressionStatement _ _ ) = Right "ExpressionStatement"
+isExpStmt s                              = Left $ Ast.string s
+
 
 testLetStatementInput1 = [r|
 let x = 5;
@@ -342,6 +346,15 @@ testOperatorPrecedenceParsing = TestList
         testHelper "-(5 + 5)" ~?= "(-(5 + 5))"
   , "testOperatorPrecedenceParsing paren test 5" ~:
         testHelper "!(true == true)" ~?= "(!(true == true))"
+
+  , "testOperatorPrecedenceParsing call function 1" ~:
+        testHelper "a + add(b * c) + d" ~?= "((a + add((b * c))) + d)"
+
+  , "testOperatorPrecedenceParsing call function 2" ~:
+        testHelper "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))" ~?= "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"
+
+  , "testOperatorPrecedenceParsing call function 2" ~:
+        testHelper "add(a + b + c * d / f + g)" ~?= "add((((a + b) + ((c * d) / f)) + g))"
   ]
   where
     testHelper = Ast.string . Ps.parse . Lx.lexer
@@ -423,6 +436,7 @@ testIfExpression = TestList
     alternativeExpContents = testExpContents . Ast.expression . head . alternativeStmts
     isAlternativeNil =  (== Ast.NilStatement) . Ast.alternative . expression
 
+
 -- | testFunctionLiteral
 --
 testFunctionLiteral :: Test
@@ -479,8 +493,6 @@ testFunctionLiteral = TestList
   ]
 
   where
-    isExpStmt (Ast.ExpressionStatement _ _ ) = Right "ExpressionStatement"
-    isExpStmt s                              = Left $ Ast.string s
 
     isFuncLiteral (Ast.FunctionLiteral _ _ _) = True
     isFuncLiteral _                           = False
@@ -492,5 +504,37 @@ testFunctionLiteral = TestList
     paramContents n = (testExpContents . (!! n) . parameters)
 
 
+-- | testCallExpressionParsing
+--
+testCallExpressionParsing :: Test
+testCallExpressionParsing = TestList
+  [ "testCallExpressionParsing  statements length" ~:
+         (length . _statements) "add(1, 2 * 3, 4 + 5);" ~?= 1
 
+  , "testCallExpressionParsing  Is expression statement" ~:
+         (isExpStmt . head . _statements) "add(1, 2 * 3, 4 + 5);" ~?= Right "ExpressionStatement"
 
+  , "testCallExpressionParsing  Is call expression" ~:
+         (isCallExpression . fetchFirstExpression) "add(1, 2 * 3, 4 + 5);" ~?= Right True
+
+  , "testCallExpressionParsing  Is function identifire" ~:
+         ( testExpContents . Ast.function . fetchFirstExpression) "add(1, 2 * 3, 4 + 5);" ~?= [ExpIdent "add"]
+
+  , "testCallExpressionParsing  arguments length" ~:
+         ( length . Ast.arguments . fetchFirstExpression) "add(1, 2 * 3, 4 + 5);" ~?= 3
+
+  , "testCallExpressionParsing  argument 0 contents" ~:
+         argumentsContents 0  "add(1, 2 * 3, 4 + 5);" ~?= [ExpInt 1]
+
+  , "testCallExpressionParsing  argument 1 contents" ~:
+         argumentsContents 1  "add(1, 2 * 3, 4 + 5);" ~?= [ExpInt 2, ExpOp "*", ExpInt 3]
+
+  , "testCallExpressionParsing  argument 2 contents" ~:
+         argumentsContents 2  "add(1, 2 * 3, 4 + 5);" ~?= [ExpInt 4, ExpOp "+", ExpInt 5]
+
+  ]
+  where
+    isCallExpression (Ast.CallExpression _ _ _) = Right True
+    isCallExpression ex                         = Left $ Ast.string ex
+
+    argumentsContents n = testExpContents . (!! n) . Ast.arguments . fetchFirstExpression
