@@ -98,6 +98,11 @@ data Expression = Nil
                   , consequence :: Statement    -- BlockStatement
                   , alternative :: Statement    -- BlockStatement
                   }
+                | FunctionLiteral {
+                    expToken   :: Tk.Token
+                  , parameters :: [Expression]    -- Identifire
+                  , body       :: Statement       -- BlockStatement
+                  }
                 deriving (Eq, Show)
 
 instance Stringer Expression where
@@ -107,9 +112,11 @@ instance Stringer Expression where
     string (PrefixExpression _ o r)  = "(" <> o <> string r <> ")"
     string (InfixExpression _ l o r) = "(" <> string l <> " " <> o <> " " <> string r <> ")"
     string (Boolean t _) = Tk.literal t
-    string (IfExpression t cond cons alt) = "if " <> string cond <> " " <> string cons <> elseStr alt
+    string (IfExpression _ cond cons alt) = "if " <> string cond <> " " <> string cons <> elseStr alt
+    string (FunctionLiteral _ ps b) = "fn" <> "(" <> T.intercalate ", " (map string ps) <> ")" <> string b
 
 
+elseStr :: Statement -> T.Text
 elseStr b@(BlockStatement _ _) = "else " <> string b
 elseStr stmt                   = string stmt
 

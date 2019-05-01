@@ -3,6 +3,9 @@ module Haskey.Parser
   parse
 ) where
 
+-- TODO:
+-- Tk というモジュール名変えたい Tok or Token がよい？
+--
 import           Control.Applicative
 import qualified Data.Map            as M
 import qualified Data.Text           as T
@@ -121,6 +124,7 @@ prefixParseFns = M.fromList [
                  , (Tk.TRUE, parseBoolean)
                  , (Tk.FALSE, parseBoolean)
                  , (Tk.If, parseIfExpression)
+                 , (Tk.Function, parseFunctionLiteral)
                  , (Tk.Lparen, parseGroupedExpression)
                  ]
 
@@ -280,6 +284,9 @@ parseBoolean = Ast.Boolean <$> curToken <*> parseBool
 
 -- | parseBool
 --
+-- TODO:
+-- parseBoolean と名前が紛らわしい
+--
 parseBool :: Parser Bool
 parseBool = fmap (Tk.tokenIs Tk.TRUE) curToken
 
@@ -296,6 +303,9 @@ parseIfExpression = do
 
 -- | parseElseExpression
 --
+-- TODO:
+-- 式ではないので Expression という名前は修正する
+--
 parseElseExpression :: Parser Ast.Statement
 parseElseExpression = do
     next $ parsePeek Tk.Else
@@ -310,6 +320,34 @@ parseBlockStatement = do
     stmts <- many (next parseStatement)
     parseToken Tk.Rbrace
     return $ Ast.BlockStatement t stmts
+
+-- | parseFunctionLiteral
+--
+parseFunctionLiteral :: Parser Ast.Expression
+parseFunctionLiteral = do
+    t <- next (parseToken Tk.Function)
+    parameters <- next parseFunctionParameters
+    body <- parseBlockStatement
+    return $ Ast.FunctionLiteral t parameters body
+
+-- | parseFunctionParameters
+--
+parseFunctionParameters :: Parser [Ast.Expression]
+parseFunctionParameters = do
+    next $ parseToken Tk.Lparen
+    parameters <- sepBy parseIdentifire Tk.Comma
+    parseToken Tk.Rparen
+    return parameters
+
+-- | sepBy
+--
+sepBy :: Parser a -> Tk.TokenType -> Parser [a]
+sepBy p tokType = someParams <|> return []
+  where
+    someParams = do
+        r <- p
+        (next . next . parsePeek) Tk.Comma *> fmap (r:) (sepBy p tokType)
+            <|> next (return [r])
 
 
 -- | parseGroupedExpression
@@ -332,7 +370,7 @@ parseGroupedExpression = do
 -- | parseIdentifire
 --
 parseIdentifire :: Parser Ast.Expression
-parseIdentifire = Ast.Identifire <$> curToken <*> fmap Tk.literal curToken
+parseIdentifire = Ast.Identifire <$> parseToken Tk.Ident <*> fmap Tk.literal (parseToken Tk.Ident)
 
 -- | parseIntegerLiteral
 --

@@ -22,6 +22,7 @@ main = do
       , testOperatorPrecedenceParsing
       , testBooleanExpression
       , testIfExpression
+      , testFunctionLiteral
       ]
     return ()
 
@@ -180,6 +181,15 @@ testLexer = TestList
 -- | parser
 -- ---------------------------------------------------------------------------------
 
+-- | helper
+--
+_statements = Ast.statements . Ps.parse . Lx.lexer
+
+_firstStatement = head . _statements
+
+fetchFirstExpression = Ast.expression . head . Ast.statements . Ps.parse . Lx.lexer
+
+
 testLetStatementInput1 = [r|
 let x = 5;
 let y = 10;
@@ -227,9 +237,6 @@ testExpContents (Ast.Boolean _ v)                = [ExpBool v]
 testExpContents (Ast.PrefixExpression _ op r)    =  [ExpOp op] ++ testExpContents r
 testExpContents (Ast.InfixExpression _ l op r)   =  testExpContents l ++ [ExpOp op] ++ testExpContents r
 
--- | fetchFirstExpression
---
-fetchFirstExpression = Ast.expression . head . Ast.statements . Ps.parse . Lx.lexer
 
 
 
@@ -415,4 +422,75 @@ testIfExpression = TestList
     alternativeStmtsLen = length . alternativeStmts
     alternativeExpContents = testExpContents . Ast.expression . head . alternativeStmts
     isAlternativeNil =  (== Ast.NilStatement) . Ast.alternative . expression
+
+-- | testFunctionLiteral
+--
+testFunctionLiteral :: Test
+testFunctionLiteral = TestList
+  [ "testFunctionLiteral  statements length" ~:
+         (length . _statements) "fn(x, y) { x + y; }" ~?= 1
+
+  , "testFunctionLiteral  Is statement expressionStatement" ~:
+         (isExpStmt . _firstStatement) "fn() { x + y; }" ~?= Right "ExpressionStatement"
+
+  , "testFunctionLiteral  Is statement expressionStatement" ~:
+         (isExpStmt . _firstStatement) "fn(x, y) { x + y; }" ~?= Right "ExpressionStatement"
+
+  , "testFunctionLiteral  Is expression function literal" ~:
+         (isFuncLiteral . fetchFirstExpression) "fn(x, y) { x + y; }" ~?= True
+
+  , "testFunctionLiteral  function's param length" ~:
+         (length . parameters) "fn(x, y) { x + y; }" ~?= 2
+
+  , "testFunctionLiteral  function's param 1 contents" ~:
+         paramContents 0 "fn(x, y) { x + y; }" ~?= [ExpIdent "x"]
+
+  , "testFunctionLiteral  function's param 2 contents" ~:
+         paramContents 1 "fn(x, y) { x + y; }" ~?= [ExpIdent "y"]
+
+  , "testFunctionLiteral  function's body statements length" ~:
+         (length . bodyStmts) "fn(x, y) { x + y; }" ~?= 1
+
+  , "testFunctionLiteral  Is function's body expression statement" ~:
+         (isExpStmt . head . bodyStmts) "fn(x, y) { x + y; }" ~?= Right "ExpressionStatement"
+
+  , "testFunctionLiteral  function's body expression statement contents" ~:
+         (testExpContents . Ast.expression . head . bodyStmts) "fn(x, y) { x + y; }" ~?=
+            [ ExpIdent "x"
+            , ExpOp "+"
+            , ExpIdent "y"
+            ]
+
+  , "testFunctionParameterParsing 1 parameters length" ~:
+        (length . parameters) "fn() {};" ~?= 0
+
+  , "testFunctionParameterParsing 2 parameters length" ~:
+        (length . parameters) "fn(x) {};" ~?= 1
+
+  , "testFunctionParameterParsing 2 parameters contents" ~:
+        paramContents 0 "fn(x) {};" ~?= [ExpIdent "x"]
+
+  , "testFunctionParameterParsing 3 parameters length" ~:
+        (length . parameters) "fn(x, y, z) {};" ~?= 3
+
+  , "testFunctionParameterParsing 3 parameters contents" ~:
+        concatMap (flip paramContents "fn(x, y, z) {};") [0..2] ~?=
+            [ExpIdent "x", ExpIdent "y", ExpIdent "z"]
+  ]
+
+  where
+    isExpStmt (Ast.ExpressionStatement _ _ ) = Right "ExpressionStatement"
+    isExpStmt s                              = Left $ Ast.string s
+
+    isFuncLiteral (Ast.FunctionLiteral _ _ _) = True
+    isFuncLiteral _                           = False
+
+    parameters = Ast.parameters . fetchFirstExpression
+
+    bodyStmts = Ast.stmtStatements . Ast.body . fetchFirstExpression
+
+    paramContents n = (testExpContents . (!! n) . parameters)
+
+
+
 
