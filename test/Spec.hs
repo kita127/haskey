@@ -24,6 +24,8 @@ main = do
       , testIfExpression
       , testFunctionLiteral
       , testCallExpressionParsing
+      , testLetStatements
+      , testReturnStatements
       ]
     return ()
 
@@ -538,3 +540,66 @@ testCallExpressionParsing = TestList
     isCallExpression ex                         = Left $ Ast.string ex
 
     argumentsContents n = testExpContents . (!! n) . Ast.arguments . fetchFirstExpression
+
+-- | testLetStatements
+--
+
+testLetStatements :: Test
+testLetStatements = TestList
+  [ "testLetStatements  statements 1 length" ~: (length . _statements) input1 ~?= 1
+
+  , "testLetStatements  statements 1 identifire" ~: testId input1 ~?= [ExpIdent "x"]
+
+  , "testLetStatements  statements 1 value" ~: testValue input1 ~?= [ExpInt 5]
+
+  , "testLetStatements  statements 2 length" ~: (length . _statements) input2 ~?= 1
+
+  , "testLetStatements  statements 2 identifire" ~: testId input2 ~?= [ExpIdent "y"]
+
+  , "testLetStatements  statements 2 value" ~: testValue input2 ~?= [ExpBool True]
+
+  , "testLetStatements  statements 3 length" ~: (length . _statements) input3 ~?= 1
+
+  , "testLetStatements  statements 3 identifire" ~: testId input3 ~?= [ExpIdent "foobar"]
+
+  , "testLetStatements  statements 3 value" ~: testValue input3 ~?= [ExpIdent "y"]
+
+  ]
+  where
+    input1 = "let x = 5;"
+    input2 = "let y = true;"
+    input3 = "let foobar = y;"
+    testId =  testExpContents . Ast.name . head . _statements
+    testValue =  testExpContents . Ast.value . head . _statements
+
+-- | testReturnStatements
+--
+testReturnStatements :: Test
+testReturnStatements = TestList
+  [ "testReturnStatements  statements 1 length" ~: (length . _statements) input1 ~?= 1
+
+  , "testReturnStatements  statements 1 return" ~: testReturn input1 ~?= "return"
+
+  , "testReturnStatements  statements 1 value" ~: testValue input1 ~?= [ExpInt 5]
+
+  , "testReturnStatements  statements 2 length" ~: (length . _statements) input2 ~?= 1
+
+  , "testReturnStatements  statements 2 return" ~: testReturn input2 ~?= "return"
+
+  , "testReturnStatements  statements 2 value" ~: testValue input2 ~?= [ExpBool True]
+
+  , "testReturnStatements  statements 3 length" ~: (length . _statements) input3 ~?= 1
+
+  , "testReturnStatements  statements 3 return" ~: testReturn input3 ~?= "return"
+
+  , "testReturnStatements  statements 3 value" ~: testValue input3 ~?= [ExpIdent "y"]
+
+  ]
+  where
+    input1 = "return 5;"
+    input2 = "return true;"
+    input3 = "return y;"
+    testReturn = Tk.literal . Ast.stmtToken . head . _statements
+    testValue =  testExpContents . Ast.returnValue . head . _statements
+
+

@@ -183,7 +183,7 @@ parseExpressionStatement = do
     expression <- parseExpression Lowest
 
     -- カレントトークンの次がセミコロンならそこまで進める
-    (next . parsePeek) Tk.Semicolon <|> curToken
+    goAheadIfNextSemicolon
     return $ Ast.ExpressionStatement t expression
 
 
@@ -218,14 +218,10 @@ prattParse precedence leftExp = do
 -- | parseReturnStatement
 --
 parseReturnStatement :: Parser Ast.Statement
-parseReturnStatement = do
-    t <- next parseReturn
-    -- value <- parseExpression
-
-    -- TODO: セミコロンまで読み飛ばしている
-    takeWhileToken Tk.Semicolon
-
-    return $ Ast.ReturnStatement t Ast.Nil
+parseReturnStatement = Ast.ReturnStatement
+                      <$> next parseReturn
+                      <*> parseExpression Lowest
+                      <* goAheadIfNextSemicolon
 
 -- | parseReturn
 --
@@ -235,15 +231,10 @@ parseReturn = parseToken Tk.Return
 -- | parseLetStatement
 --
 parseLetStatement :: Parser Ast.Statement
-parseLetStatement = do
-    t <- next parseLet
-    name <- next parseIdentifire
-    next parseAssign
---    value <- parseExpression
-
-    -- TODO: セミコロンまで読み飛ばしている
-    takeWhileToken Tk.Semicolon
-    return $ Ast.LetStatement t name Ast.Nil
+parseLetStatement = Ast.LetStatement
+                    <$> next parseLet
+                    <*> next parseIdentifire <*  next parseAssign
+                    <*> parseExpression Lowest <* goAheadIfNextSemicolon
 
 
 -- | parseLet
@@ -395,6 +386,12 @@ parseInteger = do
     v <- parseToken Tk.Int
     let intV = read . T.unpack . Tk.literal $ v :: Integer
     return intV
+
+-- | goAheadIfNextSemicolon
+--
+goAheadIfNextSemicolon :: Parser ()
+goAheadIfNextSemicolon = parsePeek Tk.Semicolon *> nextToken *> pure () <|> pure ()
+
 
 -- | parentheses
 --
