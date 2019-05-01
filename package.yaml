@@ -26,6 +26,7 @@ library:
   source-dirs: src
   ghc-options:
   - -Wall
+  - -fno-warn-unused-do-bind
   dependencies:
   - text
   - containers
