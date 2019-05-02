@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Haskey.Lexer (lexer) where
+module Haskey.Lexer (lexicalize) where
 
 import qualified Data.Char    as C
 import           Data.Maybe   (fromJust)
@@ -7,15 +7,12 @@ import qualified Data.Text    as T
 import           Haskey.Token as Tk
 
 
--- | lexer
+-- | lexicalize
 --
--- TODO:
--- lexer は関数名的に微妙なので変更を検討
---
-lexer :: T.Text -> [Tk.Token]
-lexer s
+lexicalize :: T.Text -> [Tk.Token]
+lexicalize s
     | Tk.tokenType tok == Tk.Eof = [tok]
-    | otherwise = tok : lexer s'
+    | otherwise = tok : lexicalize s'
   where
     (tok, s') = nextToken s
 

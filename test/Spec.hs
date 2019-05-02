@@ -39,7 +39,7 @@ testSample = TestList
   ]
 
 
--- | lexer
+-- | lexicalize
 -- ---------------------------------------------------------------------------------
 
 testLexerInput2 = [r|let five = 5;
@@ -69,7 +69,7 @@ testLexerInput4 = [r|
 testLexer :: Test
 testLexer = TestList
   [ "testLexer test 1" ~:
-        Lx.lexer "=+(){},;" ~?= [
+        Lx.lexicalize "=+(){},;" ~?= [
           Tk.Token { Tk.tokenType = Tk.Assign , Tk.literal = "=" }
         , Tk.Token { Tk.tokenType = Tk.Plus , Tk.literal = "+" }
         , Tk.Token { Tk.tokenType = Tk.Lparen , Tk.literal = "(" }
@@ -82,7 +82,7 @@ testLexer = TestList
 
         ]
   , "testLexer test 2" ~:
-        Lx.lexer testLexerInput2 ~?= [
+        Lx.lexicalize testLexerInput2 ~?= [
           Tk.Token { Tk.tokenType = Tk.Let , Tk.literal = "let" }
         , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "five" }
         , Tk.Token { Tk.tokenType = Tk.Assign , Tk.literal = "=" }
@@ -144,7 +144,7 @@ testLexer = TestList
         ]
 
   , "testLexer test 3" ~:
-        Lx.lexer testLexerInput3 ~?= [
+        Lx.lexicalize testLexerInput3 ~?= [
           Tk.Token { Tk.tokenType = Tk.If , Tk.literal = "if" }
         , Tk.Token { Tk.tokenType = Tk.Lparen , Tk.literal = "(" }
         , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
@@ -168,7 +168,7 @@ testLexer = TestList
         ]
 
   , "testLexer test 4" ~:
-        Lx.lexer testLexerInput4 ~?= [
+        Lx.lexicalize testLexerInput4 ~?= [
           Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
         , Tk.Token { Tk.tokenType = Tk.Eq , Tk.literal = "==" }
         , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
@@ -188,11 +188,11 @@ testLexer = TestList
 
 -- | helper
 --
-_statements = Ast.statements . Ps.parse . Lx.lexer
+_statements = Ast.statements . Ps.parse . Lx.lexicalize
 
 _firstStatement = head . _statements
 
-fetchFirstExpression = Ast.expression . head . Ast.statements . Ps.parse . Lx.lexer
+fetchFirstExpression = Ast.expression . head . Ast.statements . Ps.parse . Lx.lexicalize
 
 isExpStmt (Ast.ExpressionStatement _ _ ) = Right "ExpressionStatement"
 isExpStmt s                              = Left $ Ast.string s
@@ -207,7 +207,7 @@ let foobar = 838383;
 testLetStatement :: Test
 testLetStatement = TestList
   [ "testLetStatement test 1" ~:
-        (map testIdentifireName . Ast.statements . Ps.parse . Lx.lexer) testLetStatementInput1
+        (map testIdentifireName . Ast.statements . Ps.parse . Lx.lexicalize) testLetStatementInput1
             ~?= ["x", "y", "foobar"]
   ]
   where
@@ -225,7 +225,7 @@ return 993322;
 testReturnStatement :: Test
 testReturnStatement = TestList
   [ "testReturnStatement test 1" ~:
-        (testReturnStatementLiteral . Ps.parse . Lx.lexer) testReturnStatementInput1
+        (testReturnStatementLiteral . Ps.parse . Lx.lexicalize) testReturnStatementInput1
             ~?= ["return", "return", "return" ]
   ]
   where
@@ -361,7 +361,7 @@ testOperatorPrecedenceParsing = TestList
         testHelper "add(a + b + c * d / f + g)" ~?= "add((((a + b) + ((c * d) / f)) + g))"
   ]
   where
-    testHelper = Ast.string . Ps.parse . Lx.lexer
+    testHelper = Ast.string . Ps.parse . Lx.lexicalize
 
 -- | testBooleanExpression
 testBooleanExpression :: Test
@@ -412,14 +412,14 @@ testIfExpression = TestList
   ]
 
   where
-    testHelper1 s = let prg = (Ps.parse . Lx.lexer) s in ( programStatementsLen prg
+    testHelper1 s = let prg = (Ps.parse . Lx.lexicalize) s in ( programStatementsLen prg
                                                          , conditionExpression prg
                                                          , consequenceStmtsLen prg
                                                          , consequenceExpContents prg
                                                          , isAlternativeNil prg
                                                          )
 
-    testHelper2 s = let prg = (Ps.parse . Lx.lexer) s in ( programStatementsLen prg
+    testHelper2 s = let prg = (Ps.parse . Lx.lexicalize) s in ( programStatementsLen prg
                                                          , conditionExpression prg
                                                          , consequenceStmtsLen prg
                                                          , consequenceExpContents prg

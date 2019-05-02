@@ -28,7 +28,7 @@ start :: IO ()
 start = do
     putStrLn prompt
     l <- TIO.getLine
-    let prg = (parse . lexer) l
+    let prg = (parse . lexicalize) l
 
     if hasError prg
     then do
