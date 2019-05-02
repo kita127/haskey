@@ -227,7 +227,7 @@ parseReturnStatement = Ast.ReturnStatement
 -- | parseReturn
 --
 parseReturn :: Parser Tk.Token
-parseReturn = parseToken Tk.Return
+parseReturn = expectCur Tk.Return
 
 -- | parseLetStatement
 --
@@ -241,17 +241,17 @@ parseLetStatement = Ast.LetStatement
 -- | parseLet
 --
 parseLet :: Parser Tk.Token
-parseLet = parseToken Tk.Let
+parseLet = expectCur Tk.Let
 
 -- | parseAssign
 --
 parseAssign :: Parser Tk.Token
-parseAssign = parseToken Tk.Assign
+parseAssign = expectCur Tk.Assign
 
 -- | parseSemicolon
 --
 parseSemicolon :: Parser Tk.Token
-parseSemicolon = parseToken Tk.Semicolon
+parseSemicolon = expectCur Tk.Semicolon
 
 -- | parseInfixExpression
 --
@@ -310,16 +310,16 @@ parseElseExpression = do
 --
 parseBlockStatement :: Parser Ast.Statement
 parseBlockStatement = do
-    t <- next (parseToken Tk.Lbrace)
+    t <- next (expectCur Tk.Lbrace)
     stmts <- many (next parseStatement)
-    parseToken Tk.Rbrace
+    expectCur Tk.Rbrace
     return $ Ast.BlockStatement t stmts
 
 -- | parseFunctionLiteral
 --
 parseFunctionLiteral :: Parser Ast.Expression
 parseFunctionLiteral = do
-    t <- next (parseToken Tk.Function)
+    t <- next (expectCur Tk.Function)
     parameters <- next parseFunctionParameters
     body <- parseBlockStatement
     return $ Ast.FunctionLiteral t parameters body
@@ -328,9 +328,9 @@ parseFunctionLiteral = do
 --
 parseFunctionParameters :: Parser [Ast.Expression]
 parseFunctionParameters = do
-    next $ parseToken Tk.Lparen
+    next $ expectCur Tk.Lparen
     parameters <- sepBy parseIdentifire Tk.Comma
-    parseToken Tk.Rparen
+    expectCur Tk.Rparen
     return parameters
 
 -- | sepBy
@@ -347,10 +347,10 @@ sepBy p tokType = someParams <|> return []
 --
 parseCallExpression :: Ast.Expression -> Parser Ast.Expression
 parseCallExpression function = Ast.CallExpression
-                               <$> next (parseToken Tk.Lparen)
+                               <$> next (expectCur Tk.Lparen)
                                <*> pure function
                                <*> sepBy (parseExpression Lowest) Tk.Comma
-                               <*  parseToken Tk.Rparen
+                               <*  expectCur Tk.Rparen
 
 
 -- | parseGroupedExpression
@@ -373,7 +373,7 @@ parseGroupedExpression = do
 -- | parseIdentifire
 --
 parseIdentifire :: Parser Ast.Expression
-parseIdentifire = Ast.Identifire <$> parseToken Tk.Ident <*> fmap Tk.literal (parseToken Tk.Ident)
+parseIdentifire = Ast.Identifire <$> expectCur Tk.Ident <*> fmap Tk.literal (expectCur Tk.Ident)
 
 -- | parseIntegerLiteral
 --
@@ -384,7 +384,7 @@ parseIntegerLiteral = Ast.IntegerLiteral <$> curToken <*> parseInteger
 --
 parseInteger :: Parser Integer
 parseInteger = do
-    v <- parseToken Tk.Int
+    v <- expectCur Tk.Int
     let intV = read . T.unpack . Tk.literal $ v :: Integer
     return intV
 
@@ -397,20 +397,18 @@ goAheadIfNextSemicolon = parsePeek Tk.Semicolon *> nextToken *> pure () <|> pure
 -- | parentheses
 --
 parentheses :: Parser a -> Parser a
-parentheses p = next (parseToken Tk.Lparen) *> p <* next (parsePeek Tk.Rparen)
+parentheses p = next (expectCur Tk.Lparen) *> p <* next (parsePeek Tk.Rparen)
 
 
 
 
--- | parseToken
+-- | expectCur
 --
 -- TODO:
 -- Token 全て表示すると情報過多のためタイプだけとかに検討する
--- TODO:
--- expectedCur とかにかえる
 --
-parseToken :: Tk.TokenType -> Parser Tk.Token
-parseToken expected = do
+expectCur :: Tk.TokenType -> Parser Tk.Token
+expectCur expected = do
     t <- curToken
     if Tk.isToken expected t
         then return t
