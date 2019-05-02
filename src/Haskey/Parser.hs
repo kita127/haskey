@@ -302,8 +302,8 @@ parseIfExpression = do
 --
 parseElseExpression :: Parser Ast.Statement
 parseElseExpression = do
-    next $ parsePeek Tk.Else
-    next $ parsePeek Tk.Lbrace
+    next $ expectPeek Tk.Else
+    next $ expectPeek Tk.Lbrace
     parseBlockStatement
 
 -- | parseBlockStatement
@@ -340,7 +340,7 @@ sepBy p tokType = someParams <|> return []
   where
     someParams = do
         r <- p
-        (next . next . parsePeek) Tk.Comma *> fmap (r:) (sepBy p tokType)
+        (next . next . expectPeek) Tk.Comma *> fmap (r:) (sepBy p tokType)
             <|> next (return [r])
 
 -- | parseCallExpression
@@ -367,7 +367,7 @@ parseGroupedExpression = do
     --
     -- > Go 版は expectPeek が成功したらトークンを次に進める
     --
-    next (parsePeek Tk.Rparen)
+    next (expectPeek Tk.Rparen)
     return expression
 
 -- | parseIdentifire
@@ -391,13 +391,13 @@ parseInteger = do
 -- | goAheadIfNextSemicolon
 --
 goAheadIfNextSemicolon :: Parser ()
-goAheadIfNextSemicolon = parsePeek Tk.Semicolon *> nextToken *> pure () <|> pure ()
+goAheadIfNextSemicolon = expectPeek Tk.Semicolon *> nextToken *> pure () <|> pure ()
 
 
 -- | parentheses
 --
 parentheses :: Parser a -> Parser a
-parentheses p = next (expectCur Tk.Lparen) *> p <* next (parsePeek Tk.Rparen)
+parentheses p = next (expectCur Tk.Lparen) *> p <* next (expectPeek Tk.Rparen)
 
 
 
@@ -414,15 +414,13 @@ expectCur expected = do
         then return t
         else fail (printf "invalid token:%s expected token type:%s" (show t) (show expected))
 
--- | parsePeek
+-- | expectPeek
 --
 -- TODO:
 -- Token 全て表示すると情報過多のためタイプだけとかに検討する
--- TODO:
--- expectedPeek のとかにかえる
 --
-parsePeek :: Tk.TokenType -> Parser Tk.Token
-parsePeek expected = do
+expectPeek :: Tk.TokenType -> Parser Tk.Token
+expectPeek expected = do
     t <- peekToken
     if Tk.isToken expected t
         then return t
