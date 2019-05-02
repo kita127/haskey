@@ -8,6 +8,7 @@ module Haskey.Ast
 , string
 , program
 , statements
+, extractFailers
 ) where
 
 import qualified Data.Text    as T
@@ -122,10 +123,20 @@ instance Stringer Expression where
     string (CallExpression _ f as) = string f <> "(" <> T.intercalate ", " (map string as) <> ")"
 
 
+-- | elseStr
+--
 elseStr :: Statement -> T.Text
 elseStr b@(BlockStatement _ _) = "else " <> string b
 elseStr stmt                   = string stmt
 
+
+
+-- | extractFailers
+extractFailers :: Program -> [Statement]
+extractFailers = filter isErrStmt . statements
+  where
+    isErrStmt (FailStatement _ _) = True
+    isErrStmt _                   = False
 
 -- | progra
 --

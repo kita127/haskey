@@ -30,6 +30,7 @@ library:
   dependencies:
   - text
   - containers
+  - raw-strings-qq
 
 executables:
   haskey-exe:
