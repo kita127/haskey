@@ -155,7 +155,7 @@ parse = Ast.program . result
   where
     result ts
         | null ts = []
-        | (Tk.tokenIs Tk.Eof . head) ts = []
+        | (Tk.isToken Tk.Eof . head) ts = []
         | otherwise = case runParser parseStatement ts of
             -- 前の statement 最後のトークンで終わっているので次にトークンを進める
             (Done a (_:rs))      -> a : result rs
@@ -205,7 +205,7 @@ prattParse :: Precedence -> Ast.Expression -> Parser Ast.Expression
 prattParse precedence leftExp = do
     pk <- peekToken
     pkPre <- peekPrecedence
-    if not (Tk.tokenIs Tk.Semicolon pk) && precedence < pkPre
+    if not (Tk.isToken Tk.Semicolon pk) && precedence < pkPre
     then do
         t <- next peekToken
         let infixFn   = M.findWithDefault defaultFn (Tk.tokenType t) infixParseFns
@@ -282,7 +282,7 @@ parseBoolean = Ast.Boolean <$> curToken <*> parseBool
 -- parseBoolean と名前が紛らわしい
 --
 parseBool :: Parser Bool
-parseBool = fmap (Tk.tokenIs Tk.TRUE) curToken
+parseBool = fmap (Tk.isToken Tk.TRUE) curToken
 
 -- | parseIfExpression
 --
@@ -412,7 +412,7 @@ parentheses p = next (parseToken Tk.Lparen) *> p <* next (parsePeek Tk.Rparen)
 parseToken :: Tk.TokenType -> Parser Tk.Token
 parseToken expected = do
     t <- curToken
-    if Tk.tokenIs expected t
+    if Tk.isToken expected t
         then return t
         else fail (printf "invalid token:%s expected token type:%s" (show t) (show expected))
 
@@ -426,7 +426,7 @@ parseToken expected = do
 parsePeek :: Tk.TokenType -> Parser Tk.Token
 parsePeek expected = do
     t <- peekToken
-    if Tk.tokenIs expected t
+    if Tk.isToken expected t
         then return t
         else fail (printf "invalid peek token:%s expected peek token type:%s" (show t) (show expected))
 
@@ -435,7 +435,7 @@ parsePeek expected = do
 takeWhileToken :: Tk.TokenType -> Parser ()
 takeWhileToken target = do
     t <- curToken
-    if Tk.tokenIs target t
+    if Tk.isToken target t
         then return ()
         else nextToken >> takeWhileToken target
 
