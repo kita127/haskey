@@ -62,15 +62,11 @@ instance Stringer Statement where
     string NilStatement = ""
 
 -- TODO:
--- Nil は最終的に削除
---
--- TODO:
 -- レコードの重複をなんらかの方法でできるようにする
 
 -- | type Expression
 --
-data Expression = Nil
-                | Identifire {
+data Expression = Identifire {
                     expToken :: Tk.Token
                   , expValue :: T.Text
                   }
@@ -112,7 +108,6 @@ data Expression = Nil
                 deriving (Eq, Show)
 
 instance Stringer Expression where
-    string Nil                       = "null"
     string (Identifire _ v)          = v
     string (IntegerLiteral t _)      = Tk.literal t
     string (PrefixExpression _ o r)  = "(" <> o <> string r <> ")"
