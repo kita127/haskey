@@ -154,6 +154,7 @@ parse :: [Tk.Token] -> Ast.Program
 parse = Ast.program . result
   where
     result ts
+        | null ts = []
         | (Tk.tokenIs Tk.Eof . head) ts = []
         | otherwise = case runParser parseStatement ts of
             -- 前の statement 最後のトークンで終わっているので次にトークンを進める

@@ -26,6 +26,8 @@ main = do
       , testCallExpressionParsing
       , testLetStatements
       , testReturnStatements
+
+      , testInvalid
       ]
     return ()
 
@@ -603,3 +605,10 @@ testReturnStatements = TestList
     testValue =  testExpContents . Ast.returnValue . head . _statements
 
 
+-- | testInvalid
+--
+testInvalid :: Test
+testInvalid = TestList
+  [ "testInvalid  statements 1 length" ~: (length . _statements) "let" ~?= 1
+
+  ]
