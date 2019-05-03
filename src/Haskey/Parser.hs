@@ -176,13 +176,10 @@ parseStatement = do
 -- | parseExpressionStatement
 --
 parseExpressionStatement :: Parser Ast.Statement
-parseExpressionStatement = do
-    t <- curToken
-    expression <- parseExpression Lowest
-
-    -- カレントトークンの次がセミコロンならそこまで進める
-    goAheadIfNextSemicolon
-    return $ Ast.ExpressionStatement t expression
+parseExpressionStatement = Ast.ExpressionStatement
+                           <$> curToken
+                           <*> parseExpression Lowest
+                           <* goAheadIfNextSemicolon
 
 
 -- | parseExpression
@@ -245,27 +242,23 @@ parseLet = expectCur Tok.Let
 parseAssign :: Parser Tok.Token
 parseAssign = expectCur Tok.Assign
 
--- | parseSemicolon
---
-parseSemicolon :: Parser Tok.Token
-parseSemicolon = expectCur Tok.Semicolon
 
 -- | parseInfixExpression
 --
 parseInfixExpression :: Ast.Expression -> Parser Ast.Expression
-parseInfixExpression leftExp = do
-    t <- curToken
-    precedence <- next curPrecedence
-    rightExp <- parseExpression precedence
-    return $ Ast.InfixExpression t leftExp (Tok.literal t) rightExp
+parseInfixExpression leftExp = Ast.InfixExpression
+                               <$> curToken
+                               <*> pure leftExp
+                               <*> fmap Tok.literal curToken
+                               <*> (next curPrecedence >>= parseExpression)
 
 -- | parsePrefixExpression
 --
 parsePrefixExpression :: Parser Ast.Expression
-parsePrefixExpression = do
-    t <- next curToken
-    r <- parseExpression Prefix
-    return $ Ast.PrefixExpression t (Tok.literal t) r
+parsePrefixExpression = Ast.PrefixExpression
+                        <$> curToken
+                        <*> next (fmap Tok.literal curToken)
+                        <*> parseExpression Prefix
 
 -- | parseBoolean
 --
@@ -282,39 +275,51 @@ parseBoolLiteral =     expectCur Tok.TRUE  *> pure True
 -- | parseIfExpression
 --
 parseIfExpression :: Parser Ast.Expression
-parseIfExpression = do
-    t <- nextToken
-    condition <- parentheses (parseExpression Lowest)
-    nextToken
-    consequence <- parseBlockStatement
-    alternative <- parseElseBlock <|> pure Ast.NilStatement
-    return $ Ast.IfExpression t condition consequence alternative
+parseIfExpression = Ast.IfExpression
+                <$> next (expectCur Tok.If)
+                <*> parentheses (parseExpression Lowest) <* nextToken
+                <*> parseBlockStatement
+                <*> (parseElseBlock <|> pure Ast.NilStatement)
+
+
 
 -- | parseElseBlock
 --
 parseElseBlock :: Parser Ast.Statement
-parseElseBlock = do
-    next $ expectPeek Tok.Else
-    next $ expectPeek Tok.Lbrace
-    parseBlockStatement
+parseElseBlock = next (expectPeek Tok.Else)
+              *> next (expectPeek Tok.Lbrace)
+              *> parseBlockStatement
 
 -- | parseBlockStatement
 --
 parseBlockStatement :: Parser Ast.Statement
-parseBlockStatement = do
-    t <- next (expectCur Tok.Lbrace)
-    stmts <- many (next parseStatement)
-    expectCur Tok.Rbrace
-    return $ Ast.BlockStatement t stmts
+parseBlockStatement = Ast.BlockStatement
+                  <$> next parseLbrace
+                  <*> many (next parseStatement) <* parseRbrace
+
+-- | parseLbrace
+--
+parseLbrace :: Parser Tok.Token
+parseLbrace = expectCur Tok.Lbrace
+
+-- | parseRbrace
+--
+parseRbrace :: Parser Tok.Token
+parseRbrace = expectCur Tok.Rbrace
 
 -- | parseFunctionLiteral
 --
 parseFunctionLiteral :: Parser Ast.Expression
-parseFunctionLiteral = do
-    t <- next (expectCur Tok.Function)
-    parameters <- next parseFunctionParameters
-    body <- parseBlockStatement
-    return $ Ast.FunctionLiteral t parameters body
+parseFunctionLiteral = Ast.FunctionLiteral
+                   <$> next parseFn
+                   <*> next parseFunctionParameters
+                   <*> parseBlockStatement
+
+
+-- | parseFn
+--
+parseFn :: Parser Tok.Token
+parseFn = expectCur Tok.Function
 
 -- | parseFunctionParameters
 --
@@ -351,14 +356,6 @@ parseGroupedExpression :: Parser Ast.Expression
 parseGroupedExpression = do
     nextToken
     expression <- parseExpression(Lowest)
-
-    -- NOTE:
-    -- Goインタプリタ本では次のトークンが閉じ括弧かどうかだけを確かめて、トークンは進めていない
-    -- しかしここで前に進めないと「式パースの終わりはその式の最後のトークン」の原則
-    -- に反するため、Haskey ではトークンを前に進める。Go 版がトークンを進めないのは現状で不明
-    --
-    -- > Go 版は expectPeek が成功したらトークンを次に進める
-    --
     next (expectPeek Tok.Rparen)
     return expression
 
@@ -381,6 +378,7 @@ parseInteger = do
     return intV
 
 -- | goAheadIfNextSemicolon
+-- | カレントトークンの次がセミコロンならそこまで進める
 --
 goAheadIfNextSemicolon :: Parser ()
 goAheadIfNextSemicolon = expectPeek Tok.Semicolon *> nextToken *> pure () <|> pure ()
