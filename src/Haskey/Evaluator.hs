@@ -6,6 +6,9 @@ module Haskey.Evaluator
 import qualified Haskey.Ast    as Ast
 import qualified Haskey.Object as Obj
 
+-- | objNull
+objNull = Obj.Null
+
 -- | class Node
 --
 class Node a where
