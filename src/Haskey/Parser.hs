@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Haskey.Parser
 (
   parse
@@ -150,10 +151,9 @@ infixParseFns = M.fromList [
 parse :: [Tok.Token] -> Ast.Program
 parse = Ast.program . result
   where
-    result ts
-        | null ts = []
-        | (Tok.isToken Tok.Eof . head) ts = []
-        | otherwise = case runParser parseStatement ts of
+    result []    = []
+    result [(Tok.Token Tok.Eof "")] = []
+    result ts    = case runParser parseStatement ts of
             -- 前の statement 最後のトークンで終わっているので次にトークンを進める
             (Done a (_:rs))      -> a : result rs
             (Fail reason (r:rs)) -> newFailStmt r reason : result rs
