@@ -120,8 +120,8 @@ prefixParseFns = M.fromList [
                  , (Tok.Int, parseIntegerLiteral)
                  , (Tok.Bang, parsePrefixExpression)
                  , (Tok.Minus, parsePrefixExpression)
-                 , (Tok.TRUE, parseBoolean)
-                 , (Tok.FALSE, parseBoolean)
+                 , (Tok.TRUE, parseBoolLiteral)
+                 , (Tok.FALSE, parseBoolLiteral)
                  , (Tok.If, parseIfExpression)
                  , (Tok.Function, parseFunctionLiteral)
                  , (Tok.Lparen, parseGroupedExpression)
@@ -251,10 +251,10 @@ parseIdentifire = Ast.Identifire <$> expectCur Tok.Ident <*> fmap Tok.literal (e
 parseIntegerLiteral :: Parser Ast.Expression
 parseIntegerLiteral = Ast.IntegerLiteral <$> curToken <*> parseInteger
 
--- | parseBoolean
+-- | parseBoolLiteral
 --
-parseBoolean :: Parser Ast.Expression
-parseBoolean = Ast.Boolean <$> curToken <*> parseBoolLiteral
+parseBoolLiteral :: Parser Ast.Expression
+parseBoolLiteral = Ast.Boolean <$> curToken <*> parseBool
 
 -- | parseIfExpression
 --
@@ -333,11 +333,11 @@ parseLbrace = expectCur Tok.Lbrace
 parseRbrace :: Parser Tok.Token
 parseRbrace = expectCur Tok.Rbrace
 
--- | parseBoolLiteral
+-- | parseBool
 --
-parseBoolLiteral :: Parser Bool
-parseBoolLiteral =     expectCur Tok.TRUE  *> pure True
-                   <|> expectCur Tok.FALSE *> pure False
+parseBool :: Parser Bool
+parseBool = expectCur Tok.TRUE  *> pure True
+        <|> expectCur Tok.FALSE *> pure False
 
 -- | parseLet
 --
