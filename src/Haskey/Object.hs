@@ -2,6 +2,7 @@
 module Haskey.Object
 (
   Object(..)
+, inspect
 ) where
 
 import qualified Data.Text as T
