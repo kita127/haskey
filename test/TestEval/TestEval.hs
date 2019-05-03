@@ -16,6 +16,7 @@ main = do
     runTestTT $ TestList
       [ testSample
       , testEvalIntegerExpression
+      , testEvalBooleanExpression
       ]
     return ()
 
@@ -43,3 +44,23 @@ testEvalIntegerExpression = TestList
   , "testEvalIntegerExpression / integer value" ~: (Obj.intVal . _object) "5" ~?= 5
 
   ]
+
+-- | testEvalBooleanExpression
+--
+testEvalBooleanExpression :: Test
+testEvalBooleanExpression = TestList
+  [ "testEvalBooleanExpression / Is object integer?" ~: _object input1 ~?=
+        Obj.Boolean { Obj.boolVal = True }
+
+  , "testEvalBooleanExpression / integer value" ~: (Obj.boolVal . _object) input1 ~?= True
+
+  , "testEvalBooleanExpression / Is object integer?" ~: _object input2 ~?=
+        Obj.Boolean { Obj.boolVal = False }
+
+  , "testEvalBooleanExpression / integer value" ~: (Obj.boolVal . _object) input2 ~?= False
+
+
+  ]
+  where
+    input1 = "true"
+    input2 = "false"

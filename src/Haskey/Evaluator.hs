@@ -3,8 +3,8 @@ module Haskey.Evaluator
   eval
 ) where
 
-import qualified Haskey.Object  as Obj
-import qualified Haskey.Ast  as Ast
+import qualified Haskey.Ast    as Ast
+import qualified Haskey.Object as Obj
 
 -- | class Node
 --
@@ -19,4 +19,5 @@ instance Node Ast.Statement where
 
 instance Node Ast.Expression where
     eval (Ast.IntegerLiteral _ v) = Obj.Integer v
+    eval (Ast.Boolean _ v)        = Obj.Boolean v
 
