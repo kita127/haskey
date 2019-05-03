@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Haskey.Object
 (
+  Object(..)
 ) where
 
 import qualified Data.Text as T
