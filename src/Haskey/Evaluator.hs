@@ -19,5 +19,5 @@ instance Node Ast.Statement where
 
 instance Node Ast.Expression where
     eval (Ast.IntegerLiteral _ v) = Obj.Integer v
-    eval (Ast.Boolean _ v)        = Obj.Boolean v
+    eval (Ast.Boolean _ v)        = if v then Obj.Boolean True else Obj.Boolean False
 
