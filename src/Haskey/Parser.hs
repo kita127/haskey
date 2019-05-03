@@ -279,7 +279,8 @@ parseBoolean = Ast.Boolean <$> curToken <*> parseBoolLiteral
 -- | parseBoolLiteral
 --
 parseBoolLiteral :: Parser Bool
-parseBoolLiteral = fmap (Tk.isToken Tk.TRUE) curToken
+parseBoolLiteral =     expectCur Tk.TRUE  *> pure True
+                   <|> expectCur Tk.FALSE *> pure False
 
 -- | parseIfExpression
 --
