@@ -287,16 +287,13 @@ parseIfExpression = do
     condition <- parentheses (parseExpression Lowest)
     nextToken
     consequence <- parseBlockStatement
-    alternative <- parseElseExpression <|> pure Ast.NilStatement
+    alternative <- parseElseBlock <|> pure Ast.NilStatement
     return $ Ast.IfExpression t condition consequence alternative
 
--- | parseElseExpression
+-- | parseElseBlock
 --
--- TODO:
--- 式ではないので Expression という名前は修正する
---
-parseElseExpression :: Parser Ast.Statement
-parseElseExpression = do
+parseElseBlock :: Parser Ast.Statement
+parseElseBlock = do
     next $ expectPeek Tok.Else
     next $ expectPeek Tok.Lbrace
     parseBlockStatement
