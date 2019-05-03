@@ -173,6 +173,22 @@ parseStatement = do
         Tok.Return -> parseReturnStatement
         _          -> parseExpressionStatement
 
+-- | parseLetStatement
+--
+parseLetStatement :: Parser Ast.Statement
+parseLetStatement = Ast.LetStatement
+                    <$> next parseLet
+                    <*> next parseIdentifire <*  next parseAssign
+                    <*> parseExpression Lowest <* goAheadIfNextSemicolon
+
+-- | parseReturnStatement
+--
+parseReturnStatement :: Parser Ast.Statement
+parseReturnStatement = Ast.ReturnStatement
+                      <$> next parseReturn
+                      <*> parseExpression Lowest
+                      <* goAheadIfNextSemicolon
+
 -- | parseExpressionStatement
 --
 parseExpressionStatement :: Parser Ast.Statement
@@ -208,40 +224,13 @@ prattParse precedence leftExp = do
         infixFn leftExp >>= prattParse precedence
     else return leftExp
 
-
-
--- | parseReturnStatement
+-- | parsePrefixExpression
 --
-parseReturnStatement :: Parser Ast.Statement
-parseReturnStatement = Ast.ReturnStatement
-                      <$> next parseReturn
-                      <*> parseExpression Lowest
-                      <* goAheadIfNextSemicolon
-
--- | parseReturn
---
-parseReturn :: Parser Tok.Token
-parseReturn = expectCur Tok.Return
-
--- | parseLetStatement
---
-parseLetStatement :: Parser Ast.Statement
-parseLetStatement = Ast.LetStatement
-                    <$> next parseLet
-                    <*> next parseIdentifire <*  next parseAssign
-                    <*> parseExpression Lowest <* goAheadIfNextSemicolon
-
-
--- | parseLet
---
-parseLet :: Parser Tok.Token
-parseLet = expectCur Tok.Let
-
--- | parseAssign
---
-parseAssign :: Parser Tok.Token
-parseAssign = expectCur Tok.Assign
-
+parsePrefixExpression :: Parser Ast.Expression
+parsePrefixExpression = Ast.PrefixExpression
+                        <$> curToken
+                        <*> next (fmap Tok.literal curToken)
+                        <*> parseExpression Prefix
 
 -- | parseInfixExpression
 --
@@ -252,25 +241,20 @@ parseInfixExpression leftExp = Ast.InfixExpression
                                <*> fmap Tok.literal curToken
                                <*> (next curPrecedence >>= parseExpression)
 
--- | parsePrefixExpression
+-- | parseIdentifire
 --
-parsePrefixExpression :: Parser Ast.Expression
-parsePrefixExpression = Ast.PrefixExpression
-                        <$> curToken
-                        <*> next (fmap Tok.literal curToken)
-                        <*> parseExpression Prefix
+parseIdentifire :: Parser Ast.Expression
+parseIdentifire = Ast.Identifire <$> expectCur Tok.Ident <*> fmap Tok.literal (expectCur Tok.Ident)
+
+-- | parseIntegerLiteral
+--
+parseIntegerLiteral :: Parser Ast.Expression
+parseIntegerLiteral = Ast.IntegerLiteral <$> curToken <*> parseInteger
 
 -- | parseBoolean
 --
 parseBoolean :: Parser Ast.Expression
 parseBoolean = Ast.Boolean <$> curToken <*> parseBoolLiteral
-
-
--- | parseBoolLiteral
---
-parseBoolLiteral :: Parser Bool
-parseBoolLiteral =     expectCur Tok.TRUE  *> pure True
-                   <|> expectCur Tok.FALSE *> pure False
 
 -- | parseIfExpression
 --
@@ -281,8 +265,6 @@ parseIfExpression = Ast.IfExpression
                 <*> parseBlockStatement
                 <*> (parseElseBlock <|> pure Ast.NilStatement)
 
-
-
 -- | parseElseBlock
 --
 parseElseBlock :: Parser Ast.Statement
@@ -290,12 +272,56 @@ parseElseBlock = next (expectPeek Tok.Else)
               *> next (expectPeek Tok.Lbrace)
               *> parseBlockStatement
 
+
 -- | parseBlockStatement
 --
 parseBlockStatement :: Parser Ast.Statement
 parseBlockStatement = Ast.BlockStatement
                   <$> next parseLbrace
                   <*> many (next parseStatement) <* parseRbrace
+
+-- | parseFunctionLiteral
+--
+parseFunctionLiteral :: Parser Ast.Expression
+parseFunctionLiteral = Ast.FunctionLiteral
+                   <$> next parseFn
+                   <*> next parseFunctionParameters
+                   <*> parseBlockStatement
+
+
+-- | parseFunctionParameters
+--
+parseFunctionParameters :: Parser [Ast.Expression]
+parseFunctionParameters = do
+    next $ expectCur Tok.Lparen
+    parameters <- sepBy parseIdentifire Tok.Comma
+    expectCur Tok.Rparen
+    return parameters
+
+
+-- | parseCallExpression
+--
+parseCallExpression :: Ast.Expression -> Parser Ast.Expression
+parseCallExpression function = Ast.CallExpression
+                               <$> next (expectCur Tok.Lparen)
+                               <*> pure function
+                               <*> sepBy (parseExpression Lowest) Tok.Comma
+                               <*  expectCur Tok.Rparen
+
+-- | parseGroupedExpression
+--
+parseGroupedExpression :: Parser Ast.Expression
+parseGroupedExpression = do
+    nextToken
+    expression <- parseExpression(Lowest)
+    next (expectPeek Tok.Rparen)
+    return expression
+
+
+-- | parseFn
+--
+parseFn :: Parser Tok.Token
+parseFn = expectCur Tok.Function
 
 -- | parseLbrace
 --
@@ -307,67 +333,27 @@ parseLbrace = expectCur Tok.Lbrace
 parseRbrace :: Parser Tok.Token
 parseRbrace = expectCur Tok.Rbrace
 
--- | parseFunctionLiteral
+-- | parseBoolLiteral
 --
-parseFunctionLiteral :: Parser Ast.Expression
-parseFunctionLiteral = Ast.FunctionLiteral
-                   <$> next parseFn
-                   <*> next parseFunctionParameters
-                   <*> parseBlockStatement
+parseBoolLiteral :: Parser Bool
+parseBoolLiteral =     expectCur Tok.TRUE  *> pure True
+                   <|> expectCur Tok.FALSE *> pure False
 
-
--- | parseFn
+-- | parseLet
 --
-parseFn :: Parser Tok.Token
-parseFn = expectCur Tok.Function
+parseLet :: Parser Tok.Token
+parseLet = expectCur Tok.Let
 
--- | parseFunctionParameters
+-- | parseAssign
 --
-parseFunctionParameters :: Parser [Ast.Expression]
-parseFunctionParameters = do
-    next $ expectCur Tok.Lparen
-    parameters <- sepBy parseIdentifire Tok.Comma
-    expectCur Tok.Rparen
-    return parameters
+parseAssign :: Parser Tok.Token
+parseAssign = expectCur Tok.Assign
 
--- | sepBy
+-- | parseReturn
 --
-sepBy :: Parser a -> Tok.TokenType -> Parser [a]
-sepBy p tokType = someParams <|> return []
-  where
-    someParams = do
-        r <- p
-        (next . next . expectPeek) Tok.Comma *> fmap (r:) (sepBy p tokType)
-            <|> next (return [r])
+parseReturn :: Parser Tok.Token
+parseReturn = expectCur Tok.Return
 
--- | parseCallExpression
---
-parseCallExpression :: Ast.Expression -> Parser Ast.Expression
-parseCallExpression function = Ast.CallExpression
-                               <$> next (expectCur Tok.Lparen)
-                               <*> pure function
-                               <*> sepBy (parseExpression Lowest) Tok.Comma
-                               <*  expectCur Tok.Rparen
-
-
--- | parseGroupedExpression
---
-parseGroupedExpression :: Parser Ast.Expression
-parseGroupedExpression = do
-    nextToken
-    expression <- parseExpression(Lowest)
-    next (expectPeek Tok.Rparen)
-    return expression
-
--- | parseIdentifire
---
-parseIdentifire :: Parser Ast.Expression
-parseIdentifire = Ast.Identifire <$> expectCur Tok.Ident <*> fmap Tok.literal (expectCur Tok.Ident)
-
--- | parseIntegerLiteral
---
-parseIntegerLiteral :: Parser Ast.Expression
-parseIntegerLiteral = Ast.IntegerLiteral <$> curToken <*> parseInteger
 
 -- | parseInteger
 --
@@ -383,14 +369,10 @@ parseInteger = do
 goAheadIfNextSemicolon :: Parser ()
 goAheadIfNextSemicolon = expectPeek Tok.Semicolon *> nextToken *> pure () <|> pure ()
 
-
 -- | parentheses
 --
 parentheses :: Parser a -> Parser a
 parentheses p = next (expectCur Tok.Lparen) *> p <* next (expectPeek Tok.Rparen)
-
-
-
 
 -- | expectCur
 --
@@ -425,6 +407,15 @@ takeWhileToken target = do
         then return ()
         else nextToken >> takeWhileToken target
 
+-- | sepBy
+--
+sepBy :: Parser a -> Tok.TokenType -> Parser [a]
+sepBy p tokType = someParams <|> return []
+  where
+    someParams = do
+        r <- p
+        (next . next . expectPeek) Tok.Comma *> fmap (r:) (sepBy p tokType)
+            <|> next (return [r])
 -- | next
 --
 next :: Parser a -> Parser a
