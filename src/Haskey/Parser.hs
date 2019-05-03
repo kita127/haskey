@@ -273,16 +273,13 @@ parsePrefixExpression = do
 -- | parseBoolean
 --
 parseBoolean :: Parser Ast.Expression
-parseBoolean = Ast.Boolean <$> curToken <*> parseBool
+parseBoolean = Ast.Boolean <$> curToken <*> parseBoolLiteral
 
 
--- | parseBool
+-- | parseBoolLiteral
 --
--- TODO:
--- parseBoolean と名前が紛らわしい
---
-parseBool :: Parser Bool
-parseBool = fmap (Tk.isToken Tk.TRUE) curToken
+parseBoolLiteral :: Parser Bool
+parseBoolLiteral = fmap (Tk.isToken Tk.TRUE) curToken
 
 -- | parseIfExpression
 --
