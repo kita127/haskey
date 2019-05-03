@@ -4,7 +4,7 @@ import qualified Data.Text         as T
 import qualified Haskey.Ast        as Ast
 import qualified Haskey.Lexer      as Lx
 import qualified Haskey.Parser     as Ps
-import qualified Haskey.Token      as Tk
+import qualified Haskey.Token      as Tok
 import           Test.HUnit
 import           Text.RawString.QQ
 
@@ -70,116 +70,116 @@ testLexer :: Test
 testLexer = TestList
   [ "testLexer test 1" ~:
         Lx.lexicalize "=+(){},;" ~?= [
-          Tk.Token { Tk.tokenType = Tk.Assign , Tk.literal = "=" }
-        , Tk.Token { Tk.tokenType = Tk.Plus , Tk.literal = "+" }
-        , Tk.Token { Tk.tokenType = Tk.Lparen , Tk.literal = "(" }
-        , Tk.Token { Tk.tokenType = Tk.Rparen , Tk.literal = ")" }
-        , Tk.Token { Tk.tokenType = Tk.Lbrace , Tk.literal = "{" }
-        , Tk.Token { Tk.tokenType = Tk.Rbrace , Tk.literal = "}" }
-        , Tk.Token { Tk.tokenType = Tk.Comma , Tk.literal = "," }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
-        , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
+          Tok.Token { Tok.tokenType = Tok.Assign , Tok.literal = "=" }
+        , Tok.Token { Tok.tokenType = Tok.Plus , Tok.literal = "+" }
+        , Tok.Token { Tok.tokenType = Tok.Lparen , Tok.literal = "(" }
+        , Tok.Token { Tok.tokenType = Tok.Rparen , Tok.literal = ")" }
+        , Tok.Token { Tok.tokenType = Tok.Lbrace , Tok.literal = "{" }
+        , Tok.Token { Tok.tokenType = Tok.Rbrace , Tok.literal = "}" }
+        , Tok.Token { Tok.tokenType = Tok.Comma , Tok.literal = "," }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
 
         ]
   , "testLexer test 2" ~:
         Lx.lexicalize testLexerInput2 ~?= [
-          Tk.Token { Tk.tokenType = Tk.Let , Tk.literal = "let" }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "five" }
-        , Tk.Token { Tk.tokenType = Tk.Assign , Tk.literal = "=" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+          Tok.Token { Tok.tokenType = Tok.Let , Tok.literal = "let" }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "five" }
+        , Tok.Token { Tok.tokenType = Tok.Assign , Tok.literal = "=" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "5" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
 
-        , Tk.Token { Tk.tokenType = Tk.Let , Tk.literal = "let" }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "ten" }
-        , Tk.Token { Tk.tokenType = Tk.Assign , Tk.literal = "=" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Let , Tok.literal = "let" }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "ten" }
+        , Tok.Token { Tok.tokenType = Tok.Assign , Tok.literal = "=" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "10" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
 
-        , Tk.Token { Tk.tokenType = Tk.Let , Tk.literal = "let" }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "add" }
-        , Tk.Token { Tk.tokenType = Tk.Assign , Tk.literal = "=" }
-        , Tk.Token { Tk.tokenType = Tk.Function , Tk.literal = "fn" }
-        , Tk.Token { Tk.tokenType = Tk.Lparen , Tk.literal = "(" }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "x" }
-        , Tk.Token { Tk.tokenType = Tk.Comma , Tk.literal = "," }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "y" }
-        , Tk.Token { Tk.tokenType = Tk.Rparen , Tk.literal = ")" }
-        , Tk.Token { Tk.tokenType = Tk.Lbrace , Tk.literal = "{" }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "x" }
-        , Tk.Token { Tk.tokenType = Tk.Plus , Tk.literal = "+" }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "y" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
-        , Tk.Token { Tk.tokenType = Tk.Rbrace , Tk.literal = "}" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Let , Tok.literal = "let" }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "add" }
+        , Tok.Token { Tok.tokenType = Tok.Assign , Tok.literal = "=" }
+        , Tok.Token { Tok.tokenType = Tok.Function , Tok.literal = "fn" }
+        , Tok.Token { Tok.tokenType = Tok.Lparen , Tok.literal = "(" }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "x" }
+        , Tok.Token { Tok.tokenType = Tok.Comma , Tok.literal = "," }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "y" }
+        , Tok.Token { Tok.tokenType = Tok.Rparen , Tok.literal = ")" }
+        , Tok.Token { Tok.tokenType = Tok.Lbrace , Tok.literal = "{" }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "x" }
+        , Tok.Token { Tok.tokenType = Tok.Plus , Tok.literal = "+" }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "y" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Rbrace , Tok.literal = "}" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
 
         -- let result = add(five, ten);
-        , Tk.Token { Tk.tokenType = Tk.Let , Tk.literal = "let" }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "result" }
-        , Tk.Token { Tk.tokenType = Tk.Assign , Tk.literal = "=" }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "add" }
-        , Tk.Token { Tk.tokenType = Tk.Lparen , Tk.literal = "(" }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "five" }
-        , Tk.Token { Tk.tokenType = Tk.Comma , Tk.literal = "," }
-        , Tk.Token { Tk.tokenType = Tk.Ident , Tk.literal = "ten" }
-        , Tk.Token { Tk.tokenType = Tk.Rparen , Tk.literal = ")" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Let , Tok.literal = "let" }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "result" }
+        , Tok.Token { Tok.tokenType = Tok.Assign , Tok.literal = "=" }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "add" }
+        , Tok.Token { Tok.tokenType = Tok.Lparen , Tok.literal = "(" }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "five" }
+        , Tok.Token { Tok.tokenType = Tok.Comma , Tok.literal = "," }
+        , Tok.Token { Tok.tokenType = Tok.Ident , Tok.literal = "ten" }
+        , Tok.Token { Tok.tokenType = Tok.Rparen , Tok.literal = ")" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
 
 
-        , Tk.Token { Tk.tokenType = Tk.Bang , Tk.literal = "!" }
-        , Tk.Token { Tk.tokenType = Tk.Minus , Tk.literal = "-" }
-        , Tk.Token { Tk.tokenType = Tk.Slash , Tk.literal = "/" }
-        , Tk.Token { Tk.tokenType = Tk.Asterisk , Tk.literal = "*" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Bang , Tok.literal = "!" }
+        , Tok.Token { Tok.tokenType = Tok.Minus , Tok.literal = "-" }
+        , Tok.Token { Tok.tokenType = Tok.Slash , Tok.literal = "/" }
+        , Tok.Token { Tok.tokenType = Tok.Asterisk , Tok.literal = "*" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "5" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
 
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
-        , Tk.Token { Tk.tokenType = Tk.Lt , Tk.literal = "<" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
-        , Tk.Token { Tk.tokenType = Tk.Gt , Tk.literal = ">" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "5" }
+        , Tok.Token { Tok.tokenType = Tok.Lt , Tok.literal = "<" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "10" }
+        , Tok.Token { Tok.tokenType = Tok.Gt , Tok.literal = ">" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "5" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
 
         -- EOF
-        , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
+        , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
         ]
 
   , "testLexer test 3" ~:
         Lx.lexicalize testLexerInput3 ~?= [
-          Tk.Token { Tk.tokenType = Tk.If , Tk.literal = "if" }
-        , Tk.Token { Tk.tokenType = Tk.Lparen , Tk.literal = "(" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "5" }
-        , Tk.Token { Tk.tokenType = Tk.Lt , Tk.literal = "<" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
-        , Tk.Token { Tk.tokenType = Tk.Rparen , Tk.literal = ")" }
-        , Tk.Token { Tk.tokenType = Tk.Lbrace , Tk.literal = "{" }
-        , Tk.Token { Tk.tokenType = Tk.Return , Tk.literal = "return" }
-        , Tk.Token { Tk.tokenType = Tk.TRUE , Tk.literal = "true" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
-        , Tk.Token { Tk.tokenType = Tk.Rbrace , Tk.literal = "}" }
-        , Tk.Token { Tk.tokenType = Tk.Else , Tk.literal = "else" }
-        , Tk.Token { Tk.tokenType = Tk.Lbrace , Tk.literal = "{" }
-        , Tk.Token { Tk.tokenType = Tk.Return , Tk.literal = "return" }
-        , Tk.Token { Tk.tokenType = Tk.FALSE , Tk.literal = "false" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
-        , Tk.Token { Tk.tokenType = Tk.Rbrace , Tk.literal = "}" }
+          Tok.Token { Tok.tokenType = Tok.If , Tok.literal = "if" }
+        , Tok.Token { Tok.tokenType = Tok.Lparen , Tok.literal = "(" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "5" }
+        , Tok.Token { Tok.tokenType = Tok.Lt , Tok.literal = "<" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "10" }
+        , Tok.Token { Tok.tokenType = Tok.Rparen , Tok.literal = ")" }
+        , Tok.Token { Tok.tokenType = Tok.Lbrace , Tok.literal = "{" }
+        , Tok.Token { Tok.tokenType = Tok.Return , Tok.literal = "return" }
+        , Tok.Token { Tok.tokenType = Tok.TRUE , Tok.literal = "true" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Rbrace , Tok.literal = "}" }
+        , Tok.Token { Tok.tokenType = Tok.Else , Tok.literal = "else" }
+        , Tok.Token { Tok.tokenType = Tok.Lbrace , Tok.literal = "{" }
+        , Tok.Token { Tok.tokenType = Tok.Return , Tok.literal = "return" }
+        , Tok.Token { Tok.tokenType = Tok.FALSE , Tok.literal = "false" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Rbrace , Tok.literal = "}" }
 
         -- EOF
-        , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
+        , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
         ]
 
   , "testLexer test 4" ~:
         Lx.lexicalize testLexerInput4 ~?= [
-          Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
-        , Tk.Token { Tk.tokenType = Tk.Eq , Tk.literal = "==" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "10" }
-        , Tk.Token { Tk.tokenType = Tk.NotEq , Tk.literal = "!=" }
-        , Tk.Token { Tk.tokenType = Tk.Int , Tk.literal = "9" }
-        , Tk.Token { Tk.tokenType = Tk.Semicolon , Tk.literal = ";" }
+          Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "10" }
+        , Tok.Token { Tok.tokenType = Tok.Eq , Tok.literal = "==" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "10" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "10" }
+        , Tok.Token { Tok.tokenType = Tok.NotEq , Tok.literal = "!=" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "9" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
 
         -- EOF
-        , Tk.Token { Tk.tokenType = Tk.Eof , Tk.literal = "" }
+        , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
         ]
   ]
 
@@ -230,7 +230,7 @@ testReturnStatement = TestList
   ]
   where
     testReturnStatementLiteral :: Ast.Program -> [T.Text]
-    testReturnStatementLiteral = map (Tk.literal . Ast.stmtToken) . Ast.statements
+    testReturnStatementLiteral = map (Tok.literal . Ast.stmtToken) . Ast.statements
 
 
 data Exp = ExpIdent T.Text | ExpInt Integer | ExpBool Bool | ExpOp T.Text
@@ -601,7 +601,7 @@ testReturnStatements = TestList
     input1 = "return 5;"
     input2 = "return true;"
     input3 = "return y;"
-    testReturn = Tk.literal . Ast.stmtToken . head . _statements
+    testReturn = Tok.literal . Ast.stmtToken . head . _statements
     testValue =  testExpContents . Ast.returnValue . head . _statements
 
 

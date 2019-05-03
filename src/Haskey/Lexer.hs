@@ -4,53 +4,53 @@ module Haskey.Lexer (lexicalize) where
 import qualified Data.Char    as C
 import           Data.Maybe   (fromJust)
 import qualified Data.Text    as T
-import           Haskey.Token as Tk
+import           Haskey.Token as Tok
 
 
 -- | lexicalize
 --
-lexicalize :: T.Text -> [Tk.Token]
+lexicalize :: T.Text -> [Tok.Token]
 lexicalize s
-    | Tk.tokenType tok == Tk.Eof = [tok]
+    | Tok.tokenType tok == Tok.Eof = [tok]
     | otherwise = tok : lexicalize s'
   where
     (tok, s') = nextToken s
 
 -- | nextToken
 --
-nextToken :: T.Text -> (Tk.Token, T.Text)
+nextToken :: T.Text -> (Tok.Token, T.Text)
 nextToken s
     | T.null s     = (eof, "")
     | C.isSpace ch = nextToken remain        -- skip white space
-    | T.isPrefixOf "==" s = readFix Tk.Eq    "==" s
-    | T.isPrefixOf "!=" s = readFix Tk.NotEq "!=" s
-    | ch == '='    = (newToken Tk.Assign    ch, remain)
-    | ch == '+'    = (newToken Tk.Plus      ch, remain)
-    | ch == '-'    = (newToken Tk.Minus     ch, remain)
-    | ch == '!'    = (newToken Tk.Bang      ch, remain)
-    | ch == '*'    = (newToken Tk.Asterisk  ch, remain)
-    | ch == '/'    = (newToken Tk.Slash     ch, remain)
-    | ch == '<'    = (newToken Tk.Lt        ch, remain)
-    | ch == '>'    = (newToken Tk.Gt        ch, remain)
-    | ch == ';'    = (newToken Tk.Semicolon ch, remain)
-    | ch == '('    = (newToken Tk.Lparen    ch, remain)
-    | ch == ')'    = (newToken Tk.Rparen    ch, remain)
-    | ch == ','    = (newToken Tk.Comma     ch, remain)
-    | ch == '{'    = (newToken Tk.Lbrace    ch, remain)
-    | ch == '}'    = (newToken Tk.Rbrace    ch, remain)
+    | T.isPrefixOf "==" s = readFix Tok.Eq    "==" s
+    | T.isPrefixOf "!=" s = readFix Tok.NotEq "!=" s
+    | ch == '='    = (newToken Tok.Assign    ch, remain)
+    | ch == '+'    = (newToken Tok.Plus      ch, remain)
+    | ch == '-'    = (newToken Tok.Minus     ch, remain)
+    | ch == '!'    = (newToken Tok.Bang      ch, remain)
+    | ch == '*'    = (newToken Tok.Asterisk  ch, remain)
+    | ch == '/'    = (newToken Tok.Slash     ch, remain)
+    | ch == '<'    = (newToken Tok.Lt        ch, remain)
+    | ch == '>'    = (newToken Tok.Gt        ch, remain)
+    | ch == ';'    = (newToken Tok.Semicolon ch, remain)
+    | ch == '('    = (newToken Tok.Lparen    ch, remain)
+    | ch == ')'    = (newToken Tok.Rparen    ch, remain)
+    | ch == ','    = (newToken Tok.Comma     ch, remain)
+    | ch == '{'    = (newToken Tok.Lbrace    ch, remain)
+    | ch == '}'    = (newToken Tok.Rbrace    ch, remain)
     | isLetter  ch = readIdentifire s
     | C.isDigit ch = readNumber s
-    | otherwise    = (newToken Tk.Illegal   ch, remain)
+    | otherwise    = (newToken Tok.Illegal   ch, remain)
   where
     ch = T.head s
     remain = T.tail s
-    eof = Tk.Token {Tk.tokenType = Tk.Eof, Tk.literal = ""}
+    eof = Tok.Token {Tok.tokenType = Tok.Eof, Tok.literal = ""}
 
 -- | newToken
 --
-newToken :: Tk.TokenType -> Char -> Tk.Token
-newToken t c = Tk.Token { Tk.tokenType = t
-                        , Tk.literal = T.singleton c
+newToken :: Tok.TokenType -> Char -> Tok.Token
+newToken t c = Tok.Token { Tok.tokenType = t
+                        , Tok.literal = T.singleton c
                         }
 
 -- | isLetter
@@ -60,28 +60,28 @@ isLetter ch = C.isAlpha ch || ch == '_'
 
 -- | readIdentifire
 --
-readIdentifire :: T.Text -> (Tk.Token, T.Text)
+readIdentifire :: T.Text -> (Tok.Token, T.Text)
 readIdentifire s = (tok, remain)
   where
     ident = T.takeWhile isLetter s
     remain = T.dropWhile isLetter s
-    tkType = Tk.lookupIdent ident
-    tok = Tk.Token {Tk.tokenType = tkType, Tk.literal = ident}
+    tkType = Tok.lookupIdent ident
+    tok = Tok.Token {Tok.tokenType = tkType, Tok.literal = ident}
 
 -- | readNumber
 --
-readNumber :: T.Text -> (Tk.Token, T.Text)
+readNumber :: T.Text -> (Tok.Token, T.Text)
 readNumber s = (tok, remain)
   where
     num = T.takeWhile C.isDigit s
     remain = T.dropWhile C.isDigit s
-    tok = Tk.Token {Tk.tokenType = Tk.Int, Tk.literal = num}
+    tok = Tok.Token {Tok.tokenType = Tok.Int, Tok.literal = num}
 
 -- | readFix
 --
-readFix :: Tk.TokenType -> T.Text -> T.Text -> (Tk.Token, T.Text)
+readFix :: Tok.TokenType -> T.Text -> T.Text -> (Tok.Token, T.Text)
 readFix tkType fix s = (tok, remain)
   where
     remain = fromJust $ T.stripPrefix fix s
     word = T.take (T.length fix) s
-    tok = Tk.Token {Tk.tokenType = tkType, Tk.literal = word}
+    tok = Tok.Token {Tok.tokenType = tkType, Tok.literal = word}

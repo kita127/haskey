@@ -3,26 +3,23 @@ module Haskey.Parser
   parse
 ) where
 
--- TODO:
--- Tk というモジュール名変えたい Tok or Token がよい？
---
 import           Control.Applicative
 import qualified Data.Map            as M
 import qualified Data.Text           as T
 import qualified Haskey.Ast          as Ast
-import qualified Haskey.Token        as Tk
+import qualified Haskey.Token        as Tok
 import           Text.Printf
 
 ----------------------------------------------------------------------------------------------------
 -- Parser combinator
 
-newtype Parser a = Parser { runParser :: [Tk.Token] -> Result a}
+newtype Parser a = Parser { runParser :: [Tok.Token] -> Result a}
 
 data Result a = Done a Remaining
               | Fail Reason  Remaining
   deriving (Eq, Show)
 
-type Remaining = [Tk.Token]
+type Remaining = [Tok.Token]
 type Reason = String
 
 instance Functor Parser where
@@ -63,7 +60,7 @@ instance Alternative Parser where
 --
 -- 先頭のトークンを返し入力を消費する
 --
-nextToken :: Parser Tk.Token
+nextToken :: Parser Tok.Token
 nextToken = Parser (\input -> case input of
                            []     -> Fail "empty imput" []
                            (x:xs) -> Done x xs)
@@ -72,14 +69,14 @@ nextToken = Parser (\input -> case input of
 --
 -- 先頭のトークンを返すが入力を消費しない
 --
-curToken :: Parser Tk.Token
+curToken :: Parser Tok.Token
 curToken = Parser (\input -> case input of
                            []    -> Fail "empty imput" []
                            (x:_) -> Done x input)
 
 -- | peekToken
 --
-peekToken :: Parser Tk.Token
+peekToken :: Parser Tok.Token
 peekToken = Parser (\input -> case input of
                            (_:x:_) -> Done x input
                            _       -> Fail "empty imput" [])
@@ -101,47 +98,47 @@ data Precedence = Lowest
 
 -- | precedences
 --
-precedences :: M.Map Tk.TokenType Precedence
+precedences :: M.Map Tok.TokenType Precedence
 precedences = M.fromList [
-                (Tk.Eq, Equals)
-              , (Tk.NotEq, Equals)
-              , (Tk.Lt, LessGreater)
-              , (Tk.Gt, LessGreater)
-              , (Tk.Plus, Sum)
-              , (Tk.Minus, Sum)
-              , (Tk.Slash, Product)
-              , (Tk.Asterisk, Product)
-              , (Tk.Lparen, Call)
+                (Tok.Eq, Equals)
+              , (Tok.NotEq, Equals)
+              , (Tok.Lt, LessGreater)
+              , (Tok.Gt, LessGreater)
+              , (Tok.Plus, Sum)
+              , (Tok.Minus, Sum)
+              , (Tok.Slash, Product)
+              , (Tok.Asterisk, Product)
+              , (Tok.Lparen, Call)
               ]
 
 -- | prefixParseFns
 --
-prefixParseFns :: M.Map Tk.TokenType (Parser Ast.Expression)
+prefixParseFns :: M.Map Tok.TokenType (Parser Ast.Expression)
 prefixParseFns = M.fromList [
-                   (Tk.Ident, parseIdentifire)
-                 , (Tk.Int, parseIntegerLiteral)
-                 , (Tk.Bang, parsePrefixExpression)
-                 , (Tk.Minus, parsePrefixExpression)
-                 , (Tk.TRUE, parseBoolean)
-                 , (Tk.FALSE, parseBoolean)
-                 , (Tk.If, parseIfExpression)
-                 , (Tk.Function, parseFunctionLiteral)
-                 , (Tk.Lparen, parseGroupedExpression)
+                   (Tok.Ident, parseIdentifire)
+                 , (Tok.Int, parseIntegerLiteral)
+                 , (Tok.Bang, parsePrefixExpression)
+                 , (Tok.Minus, parsePrefixExpression)
+                 , (Tok.TRUE, parseBoolean)
+                 , (Tok.FALSE, parseBoolean)
+                 , (Tok.If, parseIfExpression)
+                 , (Tok.Function, parseFunctionLiteral)
+                 , (Tok.Lparen, parseGroupedExpression)
                  ]
 
 -- | infixParseFns
 --
-infixParseFns :: M.Map Tk.TokenType (Ast.Expression -> Parser Ast.Expression)
+infixParseFns :: M.Map Tok.TokenType (Ast.Expression -> Parser Ast.Expression)
 infixParseFns = M.fromList [
-                  (Tk.Plus, parseInfixExpression)
-                , (Tk.Minus, parseInfixExpression)
-                , (Tk.Slash, parseInfixExpression)
-                , (Tk.Asterisk, parseInfixExpression)
-                , (Tk.Eq, parseInfixExpression)
-                , (Tk.NotEq, parseInfixExpression)
-                , (Tk.Lt, parseInfixExpression)
-                , (Tk.Gt, parseInfixExpression)
-                , (Tk.Lparen, parseCallExpression)
+                  (Tok.Plus, parseInfixExpression)
+                , (Tok.Minus, parseInfixExpression)
+                , (Tok.Slash, parseInfixExpression)
+                , (Tok.Asterisk, parseInfixExpression)
+                , (Tok.Eq, parseInfixExpression)
+                , (Tok.NotEq, parseInfixExpression)
+                , (Tok.Lt, parseInfixExpression)
+                , (Tok.Gt, parseInfixExpression)
+                , (Tok.Lparen, parseCallExpression)
                 ]
 
 
@@ -150,12 +147,12 @@ infixParseFns = M.fromList [
 -- TODO:
 -- parseProgram にしたい
 --
-parse :: [Tk.Token] -> Ast.Program
+parse :: [Tok.Token] -> Ast.Program
 parse = Ast.program . result
   where
     result ts
         | null ts = []
-        | (Tk.isToken Tk.Eof . head) ts = []
+        | (Tok.isToken Tok.Eof . head) ts = []
         | otherwise = case runParser parseStatement ts of
             -- 前の statement 最後のトークンで終わっているので次にトークンを進める
             (Done a (_:rs))      -> a : result rs
@@ -163,7 +160,7 @@ parse = Ast.program . result
 
 -- | newFailStmt
 --
-newFailStmt :: Tk.Token -> String -> Ast.Statement
+newFailStmt :: Tok.Token -> String -> Ast.Statement
 newFailStmt = Ast.FailStatement
 
 -- | parseStatement
@@ -171,10 +168,10 @@ newFailStmt = Ast.FailStatement
 parseStatement :: Parser Ast.Statement
 parseStatement = do
     t <- curToken
-    case Tk.tokenType t of
-        Tk.Let    -> parseLetStatement
-        Tk.Return -> parseReturnStatement
-        _         -> parseExpressionStatement
+    case Tok.tokenType t of
+        Tok.Let    -> parseLetStatement
+        Tok.Return -> parseReturnStatement
+        _          -> parseExpressionStatement
 
 -- | parseExpressionStatement
 --
@@ -193,8 +190,8 @@ parseExpressionStatement = do
 parseExpression :: Precedence -> Parser Ast.Expression
 parseExpression precedence = do
     t <- curToken
-    let prefixFn  = M.findWithDefault defaultFn (Tk.tokenType t) prefixParseFns
-        defaultFn = fail . printf "no prefix parse function for %s found" . show . Tk.tokenType $ t
+    let prefixFn  = M.findWithDefault defaultFn (Tok.tokenType t) prefixParseFns
+        defaultFn = fail . printf "no prefix parse function for %s found" . show . Tok.tokenType $ t
     leftExp <- prefixFn
     prattParse precedence leftExp
 
@@ -205,11 +202,11 @@ prattParse :: Precedence -> Ast.Expression -> Parser Ast.Expression
 prattParse precedence leftExp = do
     pk <- peekToken
     pkPre <- peekPrecedence
-    if not (Tk.isToken Tk.Semicolon pk) && precedence < pkPre
+    if not (Tok.isToken Tok.Semicolon pk) && precedence < pkPre
     then do
         t <- next peekToken
-        let infixFn   = M.findWithDefault defaultFn (Tk.tokenType t) infixParseFns
-            defaultFn = fail . printf "no infix parse function for %s found" . show . Tk.tokenType $ t
+        let infixFn   = M.findWithDefault defaultFn (Tok.tokenType t) infixParseFns
+            defaultFn = fail . printf "no infix parse function for %s found" . show . Tok.tokenType $ t
 
         infixFn leftExp >>= prattParse precedence
     else return leftExp
@@ -226,8 +223,8 @@ parseReturnStatement = Ast.ReturnStatement
 
 -- | parseReturn
 --
-parseReturn :: Parser Tk.Token
-parseReturn = expectCur Tk.Return
+parseReturn :: Parser Tok.Token
+parseReturn = expectCur Tok.Return
 
 -- | parseLetStatement
 --
@@ -240,18 +237,18 @@ parseLetStatement = Ast.LetStatement
 
 -- | parseLet
 --
-parseLet :: Parser Tk.Token
-parseLet = expectCur Tk.Let
+parseLet :: Parser Tok.Token
+parseLet = expectCur Tok.Let
 
 -- | parseAssign
 --
-parseAssign :: Parser Tk.Token
-parseAssign = expectCur Tk.Assign
+parseAssign :: Parser Tok.Token
+parseAssign = expectCur Tok.Assign
 
 -- | parseSemicolon
 --
-parseSemicolon :: Parser Tk.Token
-parseSemicolon = expectCur Tk.Semicolon
+parseSemicolon :: Parser Tok.Token
+parseSemicolon = expectCur Tok.Semicolon
 
 -- | parseInfixExpression
 --
@@ -260,7 +257,7 @@ parseInfixExpression leftExp = do
     t <- curToken
     precedence <- next curPrecedence
     rightExp <- parseExpression precedence
-    return $ Ast.InfixExpression t leftExp (Tk.literal t) rightExp
+    return $ Ast.InfixExpression t leftExp (Tok.literal t) rightExp
 
 -- | parsePrefixExpression
 --
@@ -268,7 +265,7 @@ parsePrefixExpression :: Parser Ast.Expression
 parsePrefixExpression = do
     t <- next curToken
     r <- parseExpression Prefix
-    return $ Ast.PrefixExpression t (Tk.literal t) r
+    return $ Ast.PrefixExpression t (Tok.literal t) r
 
 -- | parseBoolean
 --
@@ -279,8 +276,8 @@ parseBoolean = Ast.Boolean <$> curToken <*> parseBoolLiteral
 -- | parseBoolLiteral
 --
 parseBoolLiteral :: Parser Bool
-parseBoolLiteral =     expectCur Tk.TRUE  *> pure True
-                   <|> expectCur Tk.FALSE *> pure False
+parseBoolLiteral =     expectCur Tok.TRUE  *> pure True
+                   <|> expectCur Tok.FALSE *> pure False
 
 -- | parseIfExpression
 --
@@ -300,24 +297,24 @@ parseIfExpression = do
 --
 parseElseExpression :: Parser Ast.Statement
 parseElseExpression = do
-    next $ expectPeek Tk.Else
-    next $ expectPeek Tk.Lbrace
+    next $ expectPeek Tok.Else
+    next $ expectPeek Tok.Lbrace
     parseBlockStatement
 
 -- | parseBlockStatement
 --
 parseBlockStatement :: Parser Ast.Statement
 parseBlockStatement = do
-    t <- next (expectCur Tk.Lbrace)
+    t <- next (expectCur Tok.Lbrace)
     stmts <- many (next parseStatement)
-    expectCur Tk.Rbrace
+    expectCur Tok.Rbrace
     return $ Ast.BlockStatement t stmts
 
 -- | parseFunctionLiteral
 --
 parseFunctionLiteral :: Parser Ast.Expression
 parseFunctionLiteral = do
-    t <- next (expectCur Tk.Function)
+    t <- next (expectCur Tok.Function)
     parameters <- next parseFunctionParameters
     body <- parseBlockStatement
     return $ Ast.FunctionLiteral t parameters body
@@ -326,29 +323,29 @@ parseFunctionLiteral = do
 --
 parseFunctionParameters :: Parser [Ast.Expression]
 parseFunctionParameters = do
-    next $ expectCur Tk.Lparen
-    parameters <- sepBy parseIdentifire Tk.Comma
-    expectCur Tk.Rparen
+    next $ expectCur Tok.Lparen
+    parameters <- sepBy parseIdentifire Tok.Comma
+    expectCur Tok.Rparen
     return parameters
 
 -- | sepBy
 --
-sepBy :: Parser a -> Tk.TokenType -> Parser [a]
+sepBy :: Parser a -> Tok.TokenType -> Parser [a]
 sepBy p tokType = someParams <|> return []
   where
     someParams = do
         r <- p
-        (next . next . expectPeek) Tk.Comma *> fmap (r:) (sepBy p tokType)
+        (next . next . expectPeek) Tok.Comma *> fmap (r:) (sepBy p tokType)
             <|> next (return [r])
 
 -- | parseCallExpression
 --
 parseCallExpression :: Ast.Expression -> Parser Ast.Expression
 parseCallExpression function = Ast.CallExpression
-                               <$> next (expectCur Tk.Lparen)
+                               <$> next (expectCur Tok.Lparen)
                                <*> pure function
-                               <*> sepBy (parseExpression Lowest) Tk.Comma
-                               <*  expectCur Tk.Rparen
+                               <*> sepBy (parseExpression Lowest) Tok.Comma
+                               <*  expectCur Tok.Rparen
 
 
 -- | parseGroupedExpression
@@ -365,13 +362,13 @@ parseGroupedExpression = do
     --
     -- > Go 版は expectPeek が成功したらトークンを次に進める
     --
-    next (expectPeek Tk.Rparen)
+    next (expectPeek Tok.Rparen)
     return expression
 
 -- | parseIdentifire
 --
 parseIdentifire :: Parser Ast.Expression
-parseIdentifire = Ast.Identifire <$> expectCur Tk.Ident <*> fmap Tk.literal (expectCur Tk.Ident)
+parseIdentifire = Ast.Identifire <$> expectCur Tok.Ident <*> fmap Tok.literal (expectCur Tok.Ident)
 
 -- | parseIntegerLiteral
 --
@@ -382,20 +379,20 @@ parseIntegerLiteral = Ast.IntegerLiteral <$> curToken <*> parseInteger
 --
 parseInteger :: Parser Integer
 parseInteger = do
-    v <- expectCur Tk.Int
-    let intV = read . T.unpack . Tk.literal $ v :: Integer
+    v <- expectCur Tok.Int
+    let intV = read . T.unpack . Tok.literal $ v :: Integer
     return intV
 
 -- | goAheadIfNextSemicolon
 --
 goAheadIfNextSemicolon :: Parser ()
-goAheadIfNextSemicolon = expectPeek Tk.Semicolon *> nextToken *> pure () <|> pure ()
+goAheadIfNextSemicolon = expectPeek Tok.Semicolon *> nextToken *> pure () <|> pure ()
 
 
 -- | parentheses
 --
 parentheses :: Parser a -> Parser a
-parentheses p = next (expectCur Tk.Lparen) *> p <* next (expectPeek Tk.Rparen)
+parentheses p = next (expectCur Tok.Lparen) *> p <* next (expectPeek Tok.Rparen)
 
 
 
@@ -405,10 +402,10 @@ parentheses p = next (expectCur Tk.Lparen) *> p <* next (expectPeek Tk.Rparen)
 -- TODO:
 -- Token 全て表示すると情報過多のためタイプだけとかに検討する
 --
-expectCur :: Tk.TokenType -> Parser Tk.Token
+expectCur :: Tok.TokenType -> Parser Tok.Token
 expectCur expected = do
     t <- curToken
-    if Tk.isToken expected t
+    if Tok.isToken expected t
         then return t
         else fail (printf "invalid token:%s expected token type:%s" (show t) (show expected))
 
@@ -417,19 +414,19 @@ expectCur expected = do
 -- TODO:
 -- Token 全て表示すると情報過多のためタイプだけとかに検討する
 --
-expectPeek :: Tk.TokenType -> Parser Tk.Token
+expectPeek :: Tok.TokenType -> Parser Tok.Token
 expectPeek expected = do
     t <- peekToken
-    if Tk.isToken expected t
+    if Tok.isToken expected t
         then return t
         else fail (printf "invalid peek token:%s expected peek token type:%s" (show t) (show expected))
 
 -- | takeWhileToken
 --
-takeWhileToken :: Tk.TokenType -> Parser ()
+takeWhileToken :: Tok.TokenType -> Parser ()
 takeWhileToken target = do
     t <- curToken
-    if Tk.isToken target t
+    if Tok.isToken target t
         then return ()
         else nextToken >> takeWhileToken target
 
@@ -444,11 +441,11 @@ next p = p <* nextToken
 peekPrecedence :: Parser Precedence
 peekPrecedence = do
     t <- peekToken
-    return $ M.findWithDefault Lowest (Tk.tokenType t) precedences
+    return $ M.findWithDefault Lowest (Tok.tokenType t) precedences
 
 -- | curPrecedence
 --
 curPrecedence :: Parser Precedence
 curPrecedence = do
     t <- curToken
-    return $ M.findWithDefault Lowest (Tk.tokenType t) precedences
+    return $ M.findWithDefault Lowest (Tok.tokenType t) precedences

@@ -12,7 +12,7 @@ module Haskey.Ast
 ) where
 
 import qualified Data.Text    as T
-import qualified Haskey.Token as Tk
+import qualified Haskey.Token as Tok
 
 -- | class Stringer
 --
@@ -30,32 +30,32 @@ instance Stringer Program where
 -- | type Statement
 --
 data Statement = LetStatement {
-                   stmtToken :: Tk.Token
+                   stmtToken :: Tok.Token
                  , name      :: Expression  -- Identifire
                  , value     :: Expression
                  }
                | ReturnStatement {
-                   stmtToken   :: Tk.Token
+                   stmtToken   :: Tok.Token
                  , returnValue :: Expression
                  }
                | ExpressionStatement {
-                   stmtToken  :: Tk.Token
+                   stmtToken  :: Tok.Token
                  , expression :: Expression
                  }
                | BlockStatement {
-                   stmtToken      :: Tk.Token
+                   stmtToken      :: Tok.Token
                  , stmtStatements :: [Statement]
                  }
                | FailStatement {
-                   stmtToken :: Tk.Token
+                   stmtToken :: Tok.Token
                  , reason    :: String
                  }
                | NilStatement           -- else がない場合の値
                deriving (Eq, Show)
 
 instance Stringer Statement where
-    string (LetStatement t n v)      = Tk.literal t <> " " <> string n <> " = " <> string v <> ";"
-    string (ReturnStatement t v)     = Tk.literal t <> " " <> string v <> ";"
+    string (LetStatement t n v)      = Tok.literal t <> " " <> string n <> " = " <> string v <> ";"
+    string (ReturnStatement t v)     = Tok.literal t <> " " <> string v <> ";"
     string (ExpressionStatement _ e) = string e
     string (BlockStatement _ ss) = T.concat . map string $ ss
     string (FailStatement _ r) = T.pack r
@@ -67,41 +67,41 @@ instance Stringer Statement where
 -- | type Expression
 --
 data Expression = Identifire {
-                    expToken :: Tk.Token
+                    expToken :: Tok.Token
                   , expValue :: T.Text
                   }
                 | IntegerLiteral {
-                    expToken :: Tk.Token
+                    expToken :: Tok.Token
                   , intValue :: Integer
                   }
                 | PrefixExpression {
-                    expToken :: Tk.Token
+                    expToken :: Tok.Token
                   , operator :: T.Text
                   , right    :: Expression
                   }
                 | InfixExpression {
-                    expToken :: Tk.Token
+                    expToken :: Tok.Token
                   , left     :: Expression
                   , operator :: T.Text
                   , right    :: Expression
                   }
                 | Boolean {
-                    expToken  :: Tk.Token
+                    expToken  :: Tok.Token
                   , boolValue :: Bool
                   }
                 | IfExpression {
-                    expToken    :: Tk.Token
+                    expToken    :: Tok.Token
                   , condition   :: Expression
                   , consequence :: Statement    -- BlockStatement
                   , alternative :: Statement    -- BlockStatement
                   }
                 | FunctionLiteral {
-                    expToken   :: Tk.Token
+                    expToken   :: Tok.Token
                   , parameters :: [Expression]    -- Identifire
                   , body       :: Statement       -- BlockStatement
                   }
                 | CallExpression {
-                    expToken  :: Tk.Token
+                    expToken  :: Tok.Token
                   , function  :: Expression    -- Identifire or FunctionLiteral
                   , arguments :: [Expression]
                   }
@@ -109,10 +109,10 @@ data Expression = Identifire {
 
 instance Stringer Expression where
     string (Identifire _ v)          = v
-    string (IntegerLiteral t _)      = Tk.literal t
+    string (IntegerLiteral t _)      = Tok.literal t
     string (PrefixExpression _ o r)  = "(" <> o <> string r <> ")"
     string (InfixExpression _ l o r) = "(" <> string l <> " " <> o <> " " <> string r <> ")"
-    string (Boolean t _) = Tk.literal t
+    string (Boolean t _) = Tok.literal t
     string (IfExpression _ cond cons alt) = "if " <> string cond <> " " <> string cons <> elseStr alt
     string (FunctionLiteral _ ps b) = "fn" <> "(" <> T.intercalate ", " (map string ps) <> ")" <> string b
     string (CallExpression _ f as) = string f <> "(" <> T.intercalate ", " (map string as) <> ")"
