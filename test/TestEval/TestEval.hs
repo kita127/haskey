@@ -40,13 +40,29 @@ _boolValue = Obj.boolVal . _object
 --
 testEvalIntegerExpression :: Test
 testEvalIntegerExpression = TestList
-  [ "testEvalIntegerExpression / Is object integer?" ~: _object "5" ~?=
-        Obj.Integer {
-          Obj.intVal = 5
-        }
-  , "testEvalIntegerExpression / integer value" ~: (Obj.intVal . _object) "5" ~?= 5
+  [ "testEvalIntegerExpression 1 / Is object integer?" ~: isIntegerObj "5" ~?= Right True
+
+  , "testEvalIntegerExpression 1 / integer value" ~: _intValue "5" ~?= 5
+
+  , "testEvalIntegerExpression 2 / Is object integer?" ~: isIntegerObj "10" ~?= Right True
+
+  , "testEvalIntegerExpression 2 / integer value" ~: _intValue "10" ~?= 10
+
+  , "testEvalIntegerExpression 3 / Is object integer?" ~: isIntegerObj "-5" ~?= Right True
+
+  , "testEvalIntegerExpression 3 / integer value" ~: _intValue "-5" ~?= -5
+
+  , "testEvalIntegerExpression 4 / Is object integer?" ~: isIntegerObj "-10" ~?= Right True
+
+  , "testEvalIntegerExpression 4 / integer value" ~: _intValue "-10" ~?= -10
+
 
   ]
+  where
+    _intValue = Obj.intVal . _object
+    isIntegerObj s = case _object s of
+                        (Obj.Integer _) -> Right True
+                        x               -> Left x
 
 -- | testEvalBooleanExpression
 --

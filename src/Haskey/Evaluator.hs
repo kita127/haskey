@@ -8,8 +8,8 @@ import qualified Data.Text     as T
 import qualified Haskey.Ast    as Ast
 import qualified Haskey.Object as Obj
 
--- | objNull
-objNull = Obj.Null
+-- | null'
+null' = Obj.Null
 
 -- | class Node
 --
@@ -32,7 +32,8 @@ instance Node Ast.Expression where
 --
 evalPrefixExpression :: T.Text -> Obj.Object -> Obj.Object
 evalPrefixExpression "!" right = evalBangOperatorExpression right
-evalPrefixExpression _ _       = objNull
+evalPrefixExpression "-" right = evalMinusPrefixOperatorExpression right
+evalPrefixExpression _ _       = null'
 
 -- | evalBangOperatorExpression
 --
@@ -41,3 +42,9 @@ evalBangOperatorExpression (Obj.Boolean True)  = Obj.Boolean False
 evalBangOperatorExpression (Obj.Boolean False) = Obj.Boolean True
 evalBangOperatorExpression (Obj.Null)          = Obj.Boolean True
 evalBangOperatorExpression _                   = Obj.Boolean False
+
+-- | evalMinusPrefixOperatorExpression
+--
+evalMinusPrefixOperatorExpression :: Obj.Object -> Obj.Object
+evalMinusPrefixOperatorExpression (Obj.Integer v) = Obj.Integer (-v)
+evalMinusPrefixOperatorExpression _               = null'
