@@ -26,6 +26,8 @@ instance Node Ast.Expression where
     eval (Ast.IntegerLiteral _ v) = Obj.Integer v
     eval (Ast.Boolean _ v)        = if v then Obj.Boolean True else Obj.Boolean False
     eval (Ast.PrefixExpression _ op r) = evalPrefixExpression op $ eval r
+    eval (Ast.InfixExpression _ l op r) = evalInfixExpression op (eval l) (eval r)
+    eval _ = null'
 
 
 -- | evalPrefixExpression
@@ -48,3 +50,21 @@ evalBangOperatorExpression _                   = Obj.Boolean False
 evalMinusPrefixOperatorExpression :: Obj.Object -> Obj.Object
 evalMinusPrefixOperatorExpression (Obj.Integer v) = Obj.Integer (-v)
 evalMinusPrefixOperatorExpression _               = null'
+
+-- | evalInfixExpression
+--
+evalInfixExpression :: T.Text -> Obj.Object -> Obj.Object -> Obj.Object
+evalInfixExpression op l r
+    | Obj.getObjectType l == Obj.INTEGER && Obj.getObjectType r == Obj.INTEGER
+        = evalIntegerInfixExpression op l r
+    | otherwise = null'
+
+
+-- | evalIntegerInfixExpression
+--
+evalIntegerInfixExpression :: T.Text -> Obj.Object -> Obj.Object -> Obj.Object
+evalIntegerInfixExpression "+" l r = Obj.Integer $ Obj.intVal l + Obj.intVal r
+evalIntegerInfixExpression "-" l r = Obj.Integer $ Obj.intVal l - Obj.intVal r
+evalIntegerInfixExpression "*" l r = Obj.Integer $ Obj.intVal l * Obj.intVal r
+evalIntegerInfixExpression "/" l r = Obj.Integer $ Obj.intVal l `div` Obj.intVal r
+evalIntegerInfixExpression _   _ _ = null'

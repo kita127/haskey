@@ -41,24 +41,62 @@ _boolValue = Obj.boolVal . _object
 testEvalIntegerExpression :: Test
 testEvalIntegerExpression = TestList
   [ "testEvalIntegerExpression 1 / Is object integer?" ~: isIntegerObj "5" ~?= Right True
-
   , "testEvalIntegerExpression 1 / integer value" ~: _intValue "5" ~?= 5
 
   , "testEvalIntegerExpression 2 / Is object integer?" ~: isIntegerObj "10" ~?= Right True
-
   , "testEvalIntegerExpression 2 / integer value" ~: _intValue "10" ~?= 10
 
   , "testEvalIntegerExpression 3 / Is object integer?" ~: isIntegerObj "-5" ~?= Right True
-
   , "testEvalIntegerExpression 3 / integer value" ~: _intValue "-5" ~?= -5
 
   , "testEvalIntegerExpression 4 / Is object integer?" ~: isIntegerObj "-10" ~?= Right True
-
   , "testEvalIntegerExpression 4 / integer value" ~: _intValue "-10" ~?= -10
 
+  , "testEvalIntegerExpression 5 / Is object integer?" ~: isIntegerObj input5 ~?= Right True
+  , "testEvalIntegerExpression 5 / integer value" ~: _intValue input5 ~?= 10
 
+  , "testEvalIntegerExpression 6 / Is object integer?" ~: isIntegerObj input6 ~?= Right True
+  , "testEvalIntegerExpression 6 / integer value" ~: _intValue input6 ~?= 32
+
+  , "testEvalIntegerExpression 7 / Is object integer?" ~: isIntegerObj input7 ~?= Right True
+  , "testEvalIntegerExpression 7 / integer value" ~: _intValue input7 ~?= 0
+
+  , "testEvalIntegerExpression 8 / Is object integer?" ~: isIntegerObj input8 ~?= Right True
+  , "testEvalIntegerExpression 8 / integer value" ~: _intValue input8 ~?= 20
+
+  , "testEvalIntegerExpression 9 / Is object integer?" ~: isIntegerObj input9 ~?= Right True
+  , "testEvalIntegerExpression 9 / integer value" ~: _intValue input9 ~?= 25
+
+  , "testEvalIntegerExpression 10 / Is object integer?" ~: isIntegerObj input10 ~?= Right True
+  , "testEvalIntegerExpression 10 / integer value" ~: _intValue input10 ~?= 0
+
+  , "testEvalIntegerExpression 11 / Is object integer?" ~: isIntegerObj input11 ~?= Right True
+  , "testEvalIntegerExpression 11 / integer value" ~: _intValue input11 ~?= 60
+
+  , "testEvalIntegerExpression 12 / Is object integer?" ~: isIntegerObj input12 ~?= Right True
+  , "testEvalIntegerExpression 12 / integer value" ~: _intValue input12 ~?= 30
+
+  , "testEvalIntegerExpression 13 / Is object integer?" ~: isIntegerObj input13 ~?= Right True
+  , "testEvalIntegerExpression 13 / integer value" ~: _intValue input13 ~?= 37
+
+  , "testEvalIntegerExpression 14 / Is object integer?" ~: isIntegerObj input14 ~?= Right True
+  , "testEvalIntegerExpression 14 / integer value" ~: _intValue input14 ~?= 37
+
+  , "testEvalIntegerExpression 15 / Is object integer?" ~: isIntegerObj input15 ~?= Right True
+  , "testEvalIntegerExpression 15 / integer value" ~: _intValue input15 ~?= 50
   ]
   where
+    input5 = "5 + 5 + 5 + 5 - 10"
+    input6 = "2 * 2 * 2 * 2 * 2"
+    input7 = "-50 + 100 + -50"
+    input8 = "5 * 2 + 10"
+    input9 = "5 + 2 * 10"
+    input10 = "20 + 2 * -10"
+    input11 = "50 / 2 * 2 + 10"
+    input12 = "2 * (5 + 10)"
+    input13 = "3 * 3 * 3 + 10"
+    input14 = "3 * (3 * 3) + 10"
+    input15 = "(5 + 10 * 2 + 15 / 3) * 2 + -10"
     _intValue = Obj.intVal . _object
     isIntegerObj s = case _object s of
                         (Obj.Integer _) -> Right True
