@@ -1,12 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Haskey.Token (
-  Token(..)
-, TokenType(..)
-, lookupIdent
-, isToken
-) where
+module Haskey.Token
+    ( Token(..)
+    , TokenType(..)
+    , lookupIdent
+    , isToken
+    )
+where
 
-import qualified Data.Text as T
+import qualified Data.Text                     as T
 
 data Token = Token
              { tokenType :: TokenType
@@ -59,23 +60,22 @@ data TokenType = Illegal
 -- | keywords
 --
 keywords :: [(T.Text, TokenType)]
-keywords = [ ("fn",     Function)
-           , ("let",    Let)
-           , ("if",     If)
-           , ("else",   Else)
-           , ("true",   TRUE)
-           , ("false",  FALSE)
-           , ("return", Return)
-           ]
+keywords =
+    [ ("fn"    , Function)
+    , ("let"   , Let)
+    , ("if"    , If)
+    , ("else"  , Else)
+    , ("true"  , TRUE)
+    , ("false" , FALSE)
+    , ("return", Return)
+    ]
 
 -- | lookupIdent
 --
 lookupIdent :: T.Text -> TokenType
-lookupIdent ident
-    | null ks = Ident
-    | otherwise = snd $ head ks
-  where
-    ks = filter ((ident ==) . fst) keywords
+lookupIdent ident | null ks   = Ident
+                  | otherwise = snd $ head ks
+    where ks = filter ((ident ==) . fst) keywords
 
 -- | isToken
 --

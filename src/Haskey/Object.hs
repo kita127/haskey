@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Haskey.Object
-(
-  Object(..)
-, ObjectType(..)
-, inspect
-, getObjectType
-) where
+    ( Object(..)
+    , ObjectType(..)
+    , inspect
+    , getObjectType
+    )
+where
 
-import qualified Data.Text as T
+import qualified Data.Text                     as T
 
 data ObjectType = NULL_OBJ
                 | INTEGER

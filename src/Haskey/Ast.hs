@@ -1,18 +1,18 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings     #-}
 module Haskey.Ast
-(
-  Program
-, Statement(..)
-, Expression(..)
-, string
-, program
-, statements
-, extractFailers
-) where
+    ( Program
+    , Statement(..)
+    , Expression(..)
+    , string
+    , program
+    , statements
+    , extractFailers
+    )
+where
 
-import qualified Data.Text    as T
-import qualified Haskey.Token as Tok
+import qualified Data.Text                     as T
+import qualified Haskey.Token                  as Tok
 
 -- | class Stringer
 --
@@ -54,12 +54,13 @@ data Statement = LetStatement {
                deriving (Eq, Show)
 
 instance Stringer Statement where
-    string (LetStatement t n v)      = Tok.literal t <> " " <> string n <> " = " <> string v <> ";"
-    string (ReturnStatement t v)     = Tok.literal t <> " " <> string v <> ";"
-    string (ExpressionStatement _ e) = string e
-    string (BlockStatement _ ss) = T.concat . map string $ ss
-    string (FailStatement _ r) = T.pack r
-    string NilStatement = ""
+    string (LetStatement t n v) =
+        Tok.literal t <> " " <> string n <> " = " <> string v <> ";"
+    string (ReturnStatement     t v ) = Tok.literal t <> " " <> string v <> ";"
+    string (ExpressionStatement _ e ) = string e
+    string (BlockStatement      _ ss) = T.concat . map string $ ss
+    string (FailStatement       _ r ) = T.pack r
+    string NilStatement               = ""
 
 -- TODO:
 -- レコードの重複をなんらかの方法でできるようにする
@@ -108,14 +109,18 @@ data Expression = Identifire {
                 deriving (Eq, Show)
 
 instance Stringer Expression where
-    string (Identifire _ v)          = v
-    string (IntegerLiteral t _)      = Tok.literal t
-    string (PrefixExpression _ o r)  = "(" <> o <> string r <> ")"
-    string (InfixExpression _ l o r) = "(" <> string l <> " " <> o <> " " <> string r <> ")"
+    string (Identifire     _ v    ) = v
+    string (IntegerLiteral t _    ) = Tok.literal t
+    string (PrefixExpression _ o r) = "(" <> o <> string r <> ")"
+    string (InfixExpression _ l o r) =
+        "(" <> string l <> " " <> o <> " " <> string r <> ")"
     string (Boolean t _) = Tok.literal t
-    string (IfExpression _ cond cons alt) = "if " <> string cond <> " " <> string cons <> elseStr alt
-    string (FunctionLiteral _ ps b) = "fn" <> "(" <> T.intercalate ", " (map string ps) <> ")" <> string b
-    string (CallExpression _ f as) = string f <> "(" <> T.intercalate ", " (map string as) <> ")"
+    string (IfExpression _ cond cons alt) =
+        "if " <> string cond <> " " <> string cons <> elseStr alt
+    string (FunctionLiteral _ ps b) =
+        "fn" <> "(" <> T.intercalate ", " (map string ps) <> ")" <> string b
+    string (CallExpression _ f as) =
+        string f <> "(" <> T.intercalate ", " (map string as) <> ")"
 
 
 -- | elseStr
@@ -137,5 +142,3 @@ extractFailers = filter isErrStmt . statements
 --
 program :: [Statement] -> Program
 program = Program
-
-
