@@ -106,21 +106,54 @@ testEvalIntegerExpression = TestList
 --
 testEvalBooleanExpression :: Test
 testEvalBooleanExpression = TestList
-  [ "testEvalBooleanExpression / Is object integer?" ~: _object input1 ~?=
-        Obj.Boolean { Obj.boolVal = True }
+  [ "testEvalBooleanExpression 1 / Is object Boolean?" ~: isBoolObj input1 ~?= Right True
+  , "testEvalBooleanExpression 1 / Boolean value" ~: _boolValue input1 ~?= True
 
-  , "testEvalBooleanExpression / integer value" ~: _boolValue input1 ~?= True
+  , "testEvalBooleanExpression 2 / Is object Boolean?" ~: isBoolObj input2 ~?= Right True
+  , "testEvalBooleanExpression 2 / Boolean value" ~: _boolValue input2 ~?= False
 
-  , "testEvalBooleanExpression / Is object integer?" ~: _object input2 ~?=
-        Obj.Boolean { Obj.boolVal = False }
+  , "testEvalBooleanExpression 3 / Is object Boolean?" ~: isBoolObj input3 ~?= Right True
+  , "testEvalBooleanExpression 3 / Boolean value" ~: _boolValue input3 ~?= True
 
-  , "testEvalBooleanExpression / integer value" ~: _boolValue input2 ~?= False
+  , "testEvalBooleanExpression 4 / Is object Boolean?" ~: isBoolObj input4 ~?= Right True
+  , "testEvalBooleanExpression 4 / Boolean value" ~: _boolValue input4 ~?= False
 
+  , "testEvalBooleanExpression 5 / Is object Boolean?" ~: isBoolObj input5 ~?= Right True
+  , "testEvalBooleanExpression 5 / Boolean value" ~: _boolValue input5 ~?= False
 
+  , "testEvalBooleanExpression 6 / Is object Boolean?" ~: isBoolObj input6 ~?= Right True
+  , "testEvalBooleanExpression 6 / Boolean value" ~: _boolValue input6 ~?= False
+
+  , "testEvalBooleanExpression 7 / Is object Boolean?" ~: isBoolObj input7 ~?= Right True
+  , "testEvalBooleanExpression 7 / Boolean value" ~: _boolValue input7 ~?= True
+
+  , "testEvalBooleanExpression 8 / Is object Boolean?" ~: isBoolObj input8 ~?= Right True
+  , "testEvalBooleanExpression 8 / Boolean value" ~: _boolValue input8 ~?= False
+
+  , "testEvalBooleanExpression 9 / Is object Boolean?" ~: isBoolObj input9 ~?= Right True
+  , "testEvalBooleanExpression 9 / Boolean value" ~: _boolValue input9 ~?= False
+
+  , "testEvalBooleanExpression 10 / Is object Boolean?" ~: isBoolObj input10 ~?= Right True
+  , "testEvalBooleanExpression 10 / Boolean value" ~: _boolValue input10 ~?= True
   ]
   where
     input1 = "true"
     input2 = "false"
+    input3 = "1 < 2"
+    input4 = "1 > 2"
+    input5 = "1 < 1"
+    input6 = "1 > 1"
+    input7 = "1 == 1"
+    input8 = "1 != 1"
+    input9 = "1 == 2"
+    input10 = "1 != 2"
+
+
+
+
+    isBoolObj s = case _object s of
+                    (Obj.Boolean _) -> Right True
+                    x               -> Left x
 
 -- | testBangOperator
 --

@@ -70,4 +70,10 @@ evalIntegerInfixExpression "-" l r = Obj.Integer $ Obj.intVal l - Obj.intVal r
 evalIntegerInfixExpression "*" l r = Obj.Integer $ Obj.intVal l * Obj.intVal r
 evalIntegerInfixExpression "/" l r =
     Obj.Integer $ Obj.intVal l `div` Obj.intVal r
+evalIntegerInfixExpression "<" l r = Obj.Boolean $ Obj.intVal l < Obj.intVal r
+evalIntegerInfixExpression ">" l r = Obj.Boolean $ Obj.intVal l > Obj.intVal r
+evalIntegerInfixExpression "==" l r =
+    Obj.Boolean $ Obj.intVal l == Obj.intVal r
+evalIntegerInfixExpression "!=" l r =
+    Obj.Boolean $ Obj.intVal l /= Obj.intVal r
 evalIntegerInfixExpression _ _ _ = null'
