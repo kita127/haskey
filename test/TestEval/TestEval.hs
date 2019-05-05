@@ -175,6 +175,60 @@ testEvalBooleanExpression = TestList
     , "testEvalBooleanExpression 10 / Boolean value"
     ~:  _boolValue input10
     ~?= True
+    , "testEvalBooleanExpression 11 / Is object Boolean?"
+    ~:  isBoolObj input11
+    ~?= Right True
+    , "testEvalBooleanExpression 11 / Boolean value"
+    ~:  _boolValue input11
+    ~?= True
+    , "testEvalBooleanExpression 12 / Is object Boolean?"
+    ~:  isBoolObj input12
+    ~?= Right True
+    , "testEvalBooleanExpression 12 / Boolean value"
+    ~:  _boolValue input12
+    ~?= True
+    , "testEvalBooleanExpression 13 / Is object Boolean?"
+    ~:  isBoolObj input13
+    ~?= Right True
+    , "testEvalBooleanExpression 13 / Boolean value"
+    ~:  _boolValue input13
+    ~?= False
+    , "testEvalBooleanExpression 14 / Is object Boolean?"
+    ~:  isBoolObj input14
+    ~?= Right True
+    , "testEvalBooleanExpression 14 / Boolean value"
+    ~:  _boolValue input14
+    ~?= True
+    , "testEvalBooleanExpression 15 / Is object Boolean?"
+    ~:  isBoolObj input15
+    ~?= Right True
+    , "testEvalBooleanExpression 15 / Boolean value"
+    ~:  _boolValue input15
+    ~?= True
+    , "testEvalBooleanExpression 16 / Is object Boolean?"
+    ~:  isBoolObj input16
+    ~?= Right True
+    , "testEvalBooleanExpression 16 / Boolean value"
+    ~:  _boolValue input16
+    ~?= True
+    , "testEvalBooleanExpression 17 / Is object Boolean?"
+    ~:  isBoolObj input17
+    ~?= Right True
+    , "testEvalBooleanExpression 17 / Boolean value"
+    ~:  _boolValue input17
+    ~?= False
+    , "testEvalBooleanExpression 18 / Is object Boolean?"
+    ~:  isBoolObj input18
+    ~?= Right True
+    , "testEvalBooleanExpression 18 / Boolean value"
+    ~:  _boolValue input18
+    ~?= False
+    , "testEvalBooleanExpression 19 / Is object Boolean?"
+    ~:  isBoolObj input19
+    ~?= Right True
+    , "testEvalBooleanExpression 19 / Boolean value"
+    ~:  _boolValue input19
+    ~?= True
     ]
   where
     input1  = "true"
@@ -187,9 +241,15 @@ testEvalBooleanExpression = TestList
     input8  = "1 != 1"
     input9  = "1 == 2"
     input10 = "1 != 2"
-
-
-
+    input11 = "true == true"
+    input12 = "false == false"
+    input13 = "true == false"
+    input14 = "true != false"
+    input15 = "false != true"
+    input16 = "(1 < 2) == true"
+    input17 = "(1 < 2) == false"
+    input18 = "(1 > 2) == true"
+    input19 = "(1 > 2) == false"
 
     isBoolObj s = case _object s of
         (Obj.Boolean _) -> Right True

@@ -58,6 +58,10 @@ evalInfixExpression :: T.Text -> Obj.Object -> Obj.Object -> Obj.Object
 evalInfixExpression op l r
     | Obj.getObjectType l == Obj.INTEGER && Obj.getObjectType r == Obj.INTEGER
     = evalIntegerInfixExpression op l r
+    | op == "=="
+    = Obj.Boolean $ Obj.boolVal l == Obj.boolVal r
+    | op == "!="
+    = Obj.Boolean $ Obj.boolVal l /= Obj.boolVal r
     | otherwise
     = null'
 
