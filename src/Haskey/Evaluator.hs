@@ -60,9 +60,9 @@ evalInfixExpression op l r
     | Obj.getObjectType l == Obj.INTEGER && Obj.getObjectType r == Obj.INTEGER
     = evalIntegerInfixExpression op l r
     | op == "=="
-    = Obj.Boolean $ Obj.boolVal l == Obj.boolVal r
+    = Obj.Boolean $ l == r
     | op == "!="
-    = Obj.Boolean $ Obj.boolVal l /= Obj.boolVal r
+    = Obj.Boolean $ l /= r
     | otherwise
     = null'
 
@@ -75,10 +75,8 @@ evalIntegerInfixExpression "-" l r = Obj.Integer $ Obj.intVal l - Obj.intVal r
 evalIntegerInfixExpression "*" l r = Obj.Integer $ Obj.intVal l * Obj.intVal r
 evalIntegerInfixExpression "/" l r =
     Obj.Integer $ Obj.intVal l `div` Obj.intVal r
-evalIntegerInfixExpression "<" l r = Obj.Boolean $ Obj.intVal l < Obj.intVal r
-evalIntegerInfixExpression ">" l r = Obj.Boolean $ Obj.intVal l > Obj.intVal r
-evalIntegerInfixExpression "==" l r =
-    Obj.Boolean $ Obj.intVal l == Obj.intVal r
-evalIntegerInfixExpression "!=" l r =
-    Obj.Boolean $ Obj.intVal l /= Obj.intVal r
-evalIntegerInfixExpression _ _ _ = null'
+evalIntegerInfixExpression "<"  l r = Obj.Boolean $ Obj.intVal l < Obj.intVal r
+evalIntegerInfixExpression ">"  l r = Obj.Boolean $ Obj.intVal l > Obj.intVal r
+evalIntegerInfixExpression "==" l r = Obj.Boolean $ l == r
+evalIntegerInfixExpression "!=" l r = Obj.Boolean $ l /= r
+evalIntegerInfixExpression _    _ _ = null'
