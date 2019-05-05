@@ -9,6 +9,7 @@ import qualified Haskey.Ast                    as Ast
 import qualified Haskey.Object                 as Obj
 
 -- | null'
+null' :: Obj.Object
 null' = Obj.Null
 
 -- | class Node
@@ -43,7 +44,7 @@ evalPrefixExpression _   _     = null'
 evalBangOperatorExpression :: Obj.Object -> Obj.Object
 evalBangOperatorExpression (Obj.Boolean True ) = Obj.Boolean False
 evalBangOperatorExpression (Obj.Boolean False) = Obj.Boolean True
-evalBangOperatorExpression (Obj.Null         ) = Obj.Boolean True
+evalBangOperatorExpression Obj.Null            = Obj.Boolean True
 evalBangOperatorExpression _                   = Obj.Boolean False
 
 -- | evalMinusPrefixOperatorExpression
