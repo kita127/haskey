@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
+-- {-# LANGUAGE QuasiQuotes       #-}
 import qualified Data.Text                     as T
 import qualified Haskey.Ast                    as Ast
 import qualified Haskey.Evaluator              as Eval
@@ -7,7 +7,7 @@ import qualified Haskey.Lexer                  as Lex
 import qualified Haskey.Object                 as Obj
 import qualified Haskey.Parser                 as Prs
 import           Test.HUnit
-import           Text.RawString.QQ
+-- import           Text.RawString.QQ
 
 
 main :: IO ()
@@ -28,6 +28,9 @@ _object = Eval.eval . _program
 
 _boolValue :: T.Text -> Bool
 _boolValue = Obj.boolVal . _object
+
+_intValue :: T.Text -> Integer
+_intValue = Obj.intVal . _object
 
 -- | testEvalIntegerExpression
 --
@@ -95,18 +98,17 @@ testEvalIntegerExpression = TestList
     , "testEvalIntegerExpression 15 / integer value" ~: _intValue input15 ~?= 50
     ]
   where
-    input5    = "5 + 5 + 5 + 5 - 10"
-    input6    = "2 * 2 * 2 * 2 * 2"
-    input7    = "-50 + 100 + -50"
-    input8    = "5 * 2 + 10"
-    input9    = "5 + 2 * 10"
-    input10   = "20 + 2 * -10"
-    input11   = "50 / 2 * 2 + 10"
-    input12   = "2 * (5 + 10)"
-    input13   = "3 * 3 * 3 + 10"
-    input14   = "3 * (3 * 3) + 10"
-    input15   = "(5 + 10 * 2 + 15 / 3) * 2 + -10"
-    _intValue = Obj.intVal . _object
+    input5  = "5 + 5 + 5 + 5 - 10"
+    input6  = "2 * 2 * 2 * 2 * 2"
+    input7  = "-50 + 100 + -50"
+    input8  = "5 * 2 + 10"
+    input9  = "5 + 2 * 10"
+    input10 = "20 + 2 * -10"
+    input11 = "50 / 2 * 2 + 10"
+    input12 = "2 * (5 + 10)"
+    input13 = "3 * 3 * 3 + 10"
+    input14 = "3 * (3 * 3) + 10"
+    input15 = "(5 + 10 * 2 + 15 / 3) * 2 + -10"
     isIntegerObj s = case _object s of
         (Obj.Integer _) -> Right True
         x               -> Left x
