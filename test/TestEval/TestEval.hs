@@ -32,7 +32,9 @@ _program :: T.Text -> Ast.Program
 _program = Prs.parse . Lex.lexicalize
 
 _object :: T.Text -> Obj.Object
-_object = Eval.eval . _program
+_object s = case (Eval.eval . _program) s of
+    (Right obj) -> obj
+    (Left err) -> err
 
 _boolValue :: T.Text -> Bool
 _boolValue = Obj.boolVal . _object

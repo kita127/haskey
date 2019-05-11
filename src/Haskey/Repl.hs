@@ -37,15 +37,16 @@ start = do
         printParseError prg
         start
     else do
-        let evaluted = eval prg
-        TIO.putStrLn $ Obj.inspect evaluted
+        case eval prg of
+            (Right obj) -> TIO.putStrLn $ Obj.inspect obj
+            (Left err) -> TIO.putStrLn $ Obj.inspect err
         start
 
 
 -- | hasError
 --
 hasError :: Ast.Program -> Bool
-hasError = ( /= 0) . length . Ast.extractFailers
+hasError = not . null . Ast.extractFailers
 
 
 
