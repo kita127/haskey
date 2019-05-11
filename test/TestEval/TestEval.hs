@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE QuasiQuotes       #-}
 import qualified Data.Text                     as T
 import qualified Haskey.Ast                    as Ast
 import qualified Haskey.Evaluator              as Eval
@@ -7,7 +7,7 @@ import qualified Haskey.Lexer                  as Lex
 import qualified Haskey.Object                 as Obj
 import qualified Haskey.Parser                 as Prs
 import           Test.HUnit
--- import           Text.RawString.QQ
+import           Text.RawString.QQ
 
 
 main :: IO ()
@@ -17,6 +17,7 @@ main = do
         , testEvalBooleanExpression
         , testBangOperator
         , testIfElseExpressions
+        , testReturnStatements
         ]
     return ()
 
@@ -37,6 +38,13 @@ _boolValue = Obj.boolVal . _object
 
 _intValue :: T.Text -> Integer
 _intValue = Obj.intVal . _object
+
+
+_evalObject :: T.Text -> Ob
+_evalObject s = case _object s of
+        Obj.Null      -> ObNull
+        Obj.Integer v -> ObInt v
+        o             -> ObErr $ show $ Obj.getObjectType o
 
 -- | testEvalIntegerExpression
 --
@@ -281,27 +289,45 @@ testBangOperator = TestList
 --
 testIfElseExpressions :: Test
 testIfElseExpressions = TestList
-    [ "testIfElseExpressions 1" ~: ifElseExpression "if (true) { 10 }" ~?= ObInt
+    [ "testIfElseExpressions 1" ~: _evalObject "if (true) { 10 }" ~?= ObInt
         10
     , "testIfElseExpressions 2"
-    ~:  ifElseExpression "if (false) { 10 }"
+    ~:  _evalObject "if (false) { 10 }"
     ~?= ObNull
-    , "testIfElseExpressions 3" ~: ifElseExpression "if (1) { 10 }" ~?= ObInt 10
+    , "testIfElseExpressions 3" ~: _evalObject "if (1) { 10 }" ~?= ObInt 10
     , "testIfElseExpressions 4"
-    ~:  ifElseExpression "if (1 < 2) { 10 }"
+    ~:  _evalObject "if (1 < 2) { 10 }"
     ~?= ObInt 10
     , "testIfElseExpressions 5"
-    ~:  ifElseExpression "if (1 > 2) { 10 }"
+    ~:  _evalObject "if (1 > 2) { 10 }"
     ~?= ObNull
     , "testIfElseExpressions 6"
-    ~:  ifElseExpression "if (1 > 2) { 10 } else { 20 }"
+    ~:  _evalObject "if (1 > 2) { 10 } else { 20 }"
     ~?= ObInt 20
     , "testIfElseExpressions 7"
-    ~:  ifElseExpression "if (1 < 2) { 10 } else { 20 }"
+    ~:  _evalObject "if (1 < 2) { 10 } else { 20 }"
     ~?= ObInt 10
     ]
+
+
+
+-- | testReturnStatements
+--
+testReturnStatements :: Test
+testReturnStatements = TestList
+    [ "testReturnStatements 1" ~: _evalObject "return 10;" ~?= ObInt 10
+    , "testReturnStatements 2" ~: _evalObject "return 10; 9;" ~?= ObInt 10
+    , "testReturnStatements 3" ~: _evalObject "return 2 * 5; 9;" ~?= ObInt 10
+    , "testReturnStatements 4" ~: _evalObject "9; return 2 * 5; 9;" ~?= ObInt 10
+    , "testReturnStatements 5" ~: _evalObject test5 ~?= ObInt 10
+    ]
   where
-    ifElseExpression s = case _object s of
-        Obj.Null      -> ObNull
-        Obj.Integer v -> ObInt v
-        o             -> ObErr $ show $ Obj.getObjectType o
+    test5 = [r|
+if (10 > 1) {
+    if (10 > 1) {
+      return 10;
+    }
+
+    return 1;
+}
+|]

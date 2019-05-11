@@ -18,11 +18,12 @@ class Node a where
     eval :: a -> Obj.Object
 
 instance Node Ast.Program where
-    eval = evalStatements . Ast.statements
+    eval = evalProgram . Ast.statements
 
 instance Node Ast.Statement where
     eval (Ast.ExpressionStatement _ e    ) = eval e
-    eval (Ast.BlockStatement      _ stmts) = evalStatements stmts
+    eval (Ast.BlockStatement      _ stmts) = evalBlockStatement stmts
+    eval (Ast.ReturnStatement     _ e    ) = Obj.ReturnValue $ eval e
 
 instance Node Ast.Expression where
     eval (Ast.IntegerLiteral _ v) = Obj.Integer v
@@ -36,10 +37,32 @@ instance Node Ast.Expression where
         | otherwise                = null'
     eval _ = null'
 
--- | evalStatements
+
+-- | givePriorityReturn
 --
-evalStatements :: Node a => [a] -> Obj.Object
-evalStatements = last . map eval
+givePriorityReturn :: Obj.Object -> Ast.Statement -> Obj.Object
+givePriorityReturn a s =
+    if Obj.getObjectType a == Obj.RETURN_VALUE_OBJ then a else eval s
+
+-- | evalProgram
+--
+-- TODO:
+-- とりあえず文がひとつもない時は NULL を返す
+--
+evalProgram :: [Ast.Statement] -> Obj.Object
+evalProgram = unwrap . foldl givePriorityReturn null'
+  where
+    unwrap o = if Obj.getObjectType o == Obj.RETURN_VALUE_OBJ
+        then Obj.returnVal o
+        else o
+
+-- | evalBlockStatement
+--
+-- TODO:
+-- とりあえず文がひとつもない時は NULL を返す
+--
+evalBlockStatement :: [Ast.Statement] -> Obj.Object
+evalBlockStatement = foldl givePriorityReturn null'
 
 -- | evalPrefixExpression
 --
