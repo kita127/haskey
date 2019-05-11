@@ -18,10 +18,11 @@ class Node a where
     eval :: a -> Obj.Object
 
 instance Node Ast.Program where
-    eval = last . map eval . Ast.statements
+    eval = evalStatements . Ast.statements
 
 instance Node Ast.Statement where
-    eval (Ast.ExpressionStatement _ e) = eval e
+    eval (Ast.ExpressionStatement _ e    ) = eval e
+    eval (Ast.BlockStatement      _ stmts) = evalStatements stmts
 
 instance Node Ast.Expression where
     eval (Ast.IntegerLiteral _ v) = Obj.Integer v
@@ -29,8 +30,16 @@ instance Node Ast.Expression where
     eval (Ast.PrefixExpression _ op r) = evalPrefixExpression op $ eval r
     eval (Ast.InfixExpression _ l op r) =
         evalInfixExpression op (eval l) (eval r)
+    eval (Ast.IfExpression _ cond cons alte)
+        | isTruthy (eval cond)     = eval cons
+        | alte /= Ast.NilStatement = eval alte
+        | otherwise                = null'
     eval _ = null'
 
+-- | evalStatements
+--
+evalStatements :: Node a => [a] -> Obj.Object
+evalStatements = last . map eval
 
 -- | evalPrefixExpression
 --
@@ -80,3 +89,11 @@ evalIntegerInfixExpression ">"  l r = Obj.Boolean $ Obj.intVal l > Obj.intVal r
 evalIntegerInfixExpression "==" l r = Obj.Boolean $ l == r
 evalIntegerInfixExpression "!=" l r = Obj.Boolean $ l /= r
 evalIntegerInfixExpression _    _ _ = null'
+
+-- | isTruthy
+--
+isTruthy :: Obj.Object -> Bool
+isTruthy Obj.Null            = False
+isTruthy (Obj.Boolean True ) = True
+isTruthy (Obj.Boolean False) = False
+isTruthy _                   = True

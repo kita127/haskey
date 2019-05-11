@@ -13,10 +13,16 @@ import           Test.HUnit
 main :: IO ()
 main = do
     runTestTT $ TestList
-        [testEvalIntegerExpression, testEvalBooleanExpression, testBangOperator]
+        [ testEvalIntegerExpression
+        , testEvalBooleanExpression
+        , testBangOperator
+        , testIfElseExpressions
+        ]
     return ()
 
 
+data Ob = ObInt Integer | ObNull | ObErr String
+    deriving (Eq, Show)
 
 -- | support
 --
@@ -268,3 +274,34 @@ testBangOperator = TestList
     , "testBangOperator 5" ~: _boolValue "!!false" ~?= False
     , "testBangOperator 6" ~: _boolValue "!!5" ~?= True
     ]
+
+
+
+-- | testIfElseExpressions
+--
+testIfElseExpressions :: Test
+testIfElseExpressions = TestList
+    [ "testIfElseExpressions 1" ~: ifElseExpression "if (true) { 10 }" ~?= ObInt
+        10
+    , "testIfElseExpressions 2"
+    ~:  ifElseExpression "if (false) { 10 }"
+    ~?= ObNull
+    , "testIfElseExpressions 3" ~: ifElseExpression "if (1) { 10 }" ~?= ObInt 10
+    , "testIfElseExpressions 4"
+    ~:  ifElseExpression "if (1 < 2) { 10 }"
+    ~?= ObInt 10
+    , "testIfElseExpressions 5"
+    ~:  ifElseExpression "if (1 > 2) { 10 }"
+    ~?= ObNull
+    , "testIfElseExpressions 6"
+    ~:  ifElseExpression "if (1 > 2) { 10 } else { 20 }"
+    ~?= ObInt 20
+    , "testIfElseExpressions 7"
+    ~:  ifElseExpression "if (1 < 2) { 10 } else { 20 }"
+    ~?= ObInt 10
+    ]
+  where
+    ifElseExpression s = case _object s of
+        Obj.Null      -> ObNull
+        Obj.Integer v -> ObInt v
+        o             -> ObErr $ show $ Obj.getObjectType o
