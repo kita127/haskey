@@ -40,9 +40,10 @@ instance Node Ast.Expression where
         evalInfixExpression op l' r'
     eval (Ast.IfExpression _ cond cons alte) = do
         condExpr <- eval cond
-        if isTruthy condExpr
-            then eval cons
-            else if alte /= Ast.NilStatement then eval alte else return null'
+        case () of
+            _ | isTruthy condExpr        -> eval cons
+              | alte /= Ast.NilStatement -> eval alte
+              | otherwise                -> return null'
 
 
 
