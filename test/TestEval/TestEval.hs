@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
-import qualified Data.Text                     as T
-import qualified Haskey.Ast                    as Ast
-import qualified Haskey.Evaluator              as Eval
-import qualified Haskey.Lexer                  as Lex
-import qualified Haskey.Object                 as Obj
-import qualified Haskey.Parser                 as Prs
+import qualified Data.Text         as T
+import qualified Haskey.Ast        as Ast
+import qualified Haskey.Evaluator  as Eval
+import qualified Haskey.Lexer      as Lex
+import qualified Haskey.Object     as Obj
+import qualified Haskey.Parser     as Prs
 import           Test.HUnit
 import           Text.RawString.QQ
 
@@ -18,11 +18,12 @@ main = do
         , testBangOperator
         , testIfElseExpressions
         , testReturnStatements
+        , testErrorHandling
         ]
     return ()
 
 
-data Ob = ObInt Integer | ObNull | ObErr String
+data Ob = ObInt Integer | ObNull | ObErr String| Unexpected String
     deriving (Eq, Show)
 
 -- | support
@@ -42,9 +43,10 @@ _intValue = Obj.intVal . _object
 
 _evalObject :: T.Text -> Ob
 _evalObject s = case _object s of
-        Obj.Null      -> ObNull
-        Obj.Integer v -> ObInt v
-        o             -> ObErr $ show $ Obj.getObjectType o
+        Obj.Null        -> ObNull
+        Obj.Integer v   -> ObInt v
+        Obj.Error   msg -> ObErr msg
+        o               -> Unexpected $ show $ Obj.getObjectType o
 
 -- | testEvalIntegerExpression
 --
@@ -331,3 +333,29 @@ if (10 > 1) {
     return 1;
 }
 |]
+
+
+
+-- | testErrorHandling
+--
+testErrorHandling :: Test
+testErrorHandling = TestList
+    [ "testErrorHandling 1" ~: _evalObject "5 + true;" ~?= ObErr "type mismatch: INTEGER + BOOLEAN"
+    , "testErrorHandling 2" ~: _evalObject "5 + true; 5;" ~?= ObErr "type mismatch: INTEGER + BOOLEAN"
+    , "testErrorHandling 3" ~: _evalObject "-true" ~?= ObErr "unknown operator: -BOOLEAN"
+    , "testErrorHandling 4" ~: _evalObject "true + false" ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
+    , "testErrorHandling 5" ~: _evalObject "5; true + false; 5" ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
+    , "testErrorHandling 6" ~: _evalObject "if (10 > 1) { true + false; }" ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
+    , "testErrorHandling 7" ~: _evalObject test7 ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
+    ]
+  where
+    test7 = [r|
+if (10 > 1) {
+    if (10 > 1) {
+      return true + false;
+    }
+
+    return 1;
+}
+|]
+

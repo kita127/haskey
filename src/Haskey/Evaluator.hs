@@ -7,6 +7,7 @@ where
 import qualified Data.Text                     as T
 import qualified Haskey.Ast                    as Ast
 import qualified Haskey.Object                 as Obj
+import           Text.Printf
 
 -- | null'
 null' :: Obj.Object
@@ -41,8 +42,16 @@ instance Node Ast.Expression where
 -- | givePriorityReturn
 --
 givePriorityReturn :: Obj.Object -> Ast.Statement -> Obj.Object
-givePriorityReturn a s =
-    if Obj.getObjectType a == Obj.RETURN_VALUE_OBJ then a else eval s
+givePriorityReturn a s = if isRetOrErr a then a else eval s
+
+-- | isRetOrErr
+--
+isRetOrErr :: Obj.Object -> Bool
+isRetOrErr o =
+    Obj.getObjectType o
+        == Obj.RETURN_VALUE_OBJ
+        || Obj.getObjectType o
+        == Obj.ERROR
 
 -- | evalProgram
 --
@@ -69,7 +78,10 @@ evalBlockStatement = foldl givePriorityReturn null'
 evalPrefixExpression :: T.Text -> Obj.Object -> Obj.Object
 evalPrefixExpression "!" right = evalBangOperatorExpression right
 evalPrefixExpression "-" right = evalMinusPrefixOperatorExpression right
-evalPrefixExpression _   _     = null'
+evalPrefixExpression op  right = newError $ printf
+    "unknown operator: %s%s"
+    (T.unpack op)
+    (show (Obj.getObjectType right))
 
 -- | evalBangOperatorExpression
 --
@@ -83,20 +95,32 @@ evalBangOperatorExpression _                   = Obj.Boolean False
 --
 evalMinusPrefixOperatorExpression :: Obj.Object -> Obj.Object
 evalMinusPrefixOperatorExpression (Obj.Integer v) = Obj.Integer (-v)
-evalMinusPrefixOperatorExpression _               = null'
+evalMinusPrefixOperatorExpression o =
+    newError $ printf "unknown operator: -%s" (show (Obj.getObjectType o))
 
 -- | evalInfixExpression
 --
 evalInfixExpression :: T.Text -> Obj.Object -> Obj.Object -> Obj.Object
 evalInfixExpression op l r
-    | Obj.getObjectType l == Obj.INTEGER && Obj.getObjectType r == Obj.INTEGER
+    | objTypeL == Obj.INTEGER && objTypeR == Obj.INTEGER
     = evalIntegerInfixExpression op l r
+    | objTypeL /= objTypeR
+    = newError $ printf "type mismatch: %s %s %s"
+                        (show objTypeL)
+                        (T.unpack op)
+                        (show objTypeR)
     | op == "=="
     = Obj.Boolean $ l == r
     | op == "!="
     = Obj.Boolean $ l /= r
     | otherwise
-    = null'
+    = newError $ printf "unknown operator: %s %s %s"
+                        (show objTypeL)
+                        (T.unpack op)
+                        (show objTypeR)
+  where
+    objTypeL = Obj.getObjectType l
+    objTypeR = Obj.getObjectType r
 
 
 -- | evalIntegerInfixExpression
@@ -111,7 +135,14 @@ evalIntegerInfixExpression "<"  l r = Obj.Boolean $ Obj.intVal l < Obj.intVal r
 evalIntegerInfixExpression ">"  l r = Obj.Boolean $ Obj.intVal l > Obj.intVal r
 evalIntegerInfixExpression "==" l r = Obj.Boolean $ l == r
 evalIntegerInfixExpression "!=" l r = Obj.Boolean $ l /= r
-evalIntegerInfixExpression _    _ _ = null'
+evalIntegerInfixExpression op   l r = newError $ printf
+    "unknown operator: %s %s %s"
+    (show objTypeL)
+    (T.unpack op)
+    (show objTypeR)
+  where
+    objTypeL = Obj.getObjectType l
+    objTypeR = Obj.getObjectType r
 
 -- | isTruthy
 --
@@ -120,3 +151,8 @@ isTruthy Obj.Null            = False
 isTruthy (Obj.Boolean True ) = True
 isTruthy (Obj.Boolean False) = False
 isTruthy _                   = True
+
+-- | newError
+--
+newError :: String -> Obj.Object
+newError = Obj.Error
