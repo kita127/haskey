@@ -37,7 +37,7 @@ start = do
         printParseError prg
         start
     else do
-        case Evl.runEvalutor (Evl.eval prg) Evl.newEnvironment of
+        case Evl.runEvalutor (Evl.eval prg) Obj.newEnvironment of
             (Evl.Done obj _ ) -> TIO.putStrLn $ Obj.inspect obj
             (Evl.Error obj)   -> TIO.putStrLn $ Obj.inspect obj
         start

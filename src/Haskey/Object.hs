@@ -2,12 +2,16 @@
 module Haskey.Object
     ( Object(..)
     , ObjectType(..)
+    , Environment
     , inspect
     , getObjectType
+    , newEnvironment
     )
 where
 
 import qualified Data.Text                     as T
+import qualified Data.Map                      as M
+
 data ObjectType = NULL_OBJ
                 | INTEGER
                 | BOOLEAN
@@ -30,6 +34,27 @@ data Object = Null
                 message :: String
               }
             deriving (Eq, Show)
+
+data Environment = Environment {
+                     store :: M.Map T.Text Object
+                   }
+    deriving (Eq, Show)
+
+-- | newEnvironment
+--
+newEnvironment :: Environment
+newEnvironment = Environment $ M.fromList []
+
+-- | getEnv
+--
+getEnv :: Environment -> T.Text -> Maybe Object
+getEnv env name = M.lookup name (store env)
+
+-- | setEnv
+--
+setEnv :: Environment -> T.Text -> Object -> Environment
+setEnv = undefined
+
 
 -- | inspect
 --

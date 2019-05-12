@@ -32,7 +32,7 @@ _program :: T.Text -> Ast.Program
 _program = Prs.parse . Lex.lexicalize
 
 _object :: T.Text -> Obj.Object
-_object s = case Evl.runEvalutor evaluator Evl.newEnvironment of
+_object s = case Evl.runEvalutor evaluator Obj.newEnvironment of
     (Evl.Done obj _) -> obj
     (Evl.Error err)  -> err
   where

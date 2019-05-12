@@ -2,7 +2,6 @@
 module Haskey.Evaluator
     ( eval
     , runEvalutor
-    , newEnvironment
     , Result(..)
     )
 where
@@ -16,19 +15,12 @@ import qualified Data.Map                      as M
 
 
 
--- | null'
-null' :: Obj.Object
-null' = Obj.Null
 
 -----------------------------------------------------------------------------
-data Environment = Environment {
-                     store :: M.Map T.Text Obj.Object
-                   }
-    deriving (Eq, Show)
 
-newtype Evaluator a = Evaluator {runEvalutor :: Environment -> Result a}
+newtype Evaluator a = Evaluator {runEvalutor :: Obj.Environment -> Result a}
 
-data Result a = Done a Environment
+data Result a = Done a Obj.Environment
             | Error Obj.Object
     deriving (Eq, Show)
 
@@ -64,8 +56,9 @@ instance Monad Evaluator where
     fail s = Evaluator (\env -> Error (Obj.Error s))
 -----------------------------------------------------------------------------
 
-newEnvironment :: Environment
-newEnvironment = Environment $ M.fromList []
+-- | null'
+null' :: Obj.Object
+null' = Obj.Null
 
 type ErrorObj = Obj.Object
 
@@ -99,15 +92,6 @@ instance Node Ast.Expression where
               | otherwise                -> return null'
 
 
--- | getEnv
---
-getEnv :: Environment -> T.Text -> Maybe Obj.Object
-getEnv env name = M.lookup name (store env)
-
--- | setEnv
---
-setEnv :: Environment -> T.Text -> Obj.Object -> Environment
-setEnv = undefined
 
 
 -- | givePriorityReturn
