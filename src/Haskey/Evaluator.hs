@@ -88,9 +88,6 @@ class Node a where
 instance Node Ast.Program where
     eval = evalProgram . Ast.statements
 
--- TODO:
---  let statement が返り値を返してしまっている
---
 instance Node Ast.Statement where
     eval (Ast.ExpressionStatement _ e    ) = eval e
     eval (Ast.BlockStatement      _ stmts) = evalBlockStatement stmts
@@ -124,14 +121,6 @@ givePriorityReturn :: Obj.Object -> Ast.Statement -> Evaluator Obj.Object
 givePriorityReturn a s =
     if Obj.getObjectType a == Obj.RETURN_VALUE_OBJ then pure a else eval s
 
--- | isRetOrErr
---
-isRetOrErr :: Obj.Object -> Bool
-isRetOrErr o =
-    Obj.getObjectType o
-        == Obj.RETURN_VALUE_OBJ
-        || Obj.getObjectType o
-        == Obj.ERROR
 
 -- | evalProgram
 --
@@ -246,7 +235,3 @@ isTruthy (Obj.Boolean True ) = True
 isTruthy (Obj.Boolean False) = False
 isTruthy _                   = True
 
--- | newError
---
-newError :: String -> Obj.Object
-newError = Obj.Error

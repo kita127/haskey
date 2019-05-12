@@ -47,16 +47,6 @@ data Environment = Environment {
 newEnvironment :: Environment
 newEnvironment = Environment $ M.fromList []
 
--- | getEnv
---
-getEnv :: Environment -> T.Text -> Maybe Object
-getEnv env name = M.lookup name (store env)
-
--- | setEnv
---
-setEnv :: Environment -> T.Text -> Object -> Environment
-setEnv = undefined
-
 
 -- | inspect
 --
