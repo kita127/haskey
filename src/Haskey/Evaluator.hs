@@ -123,11 +123,8 @@ givePriorityReturn a s =
 
 -- | evalProgram
 --
--- TODO:
--- とりあえず文がひとつもない時は NULL を返す
---
 evalProgram :: [Ast.Statement] -> Evaluator Obj.Object
-evalProgram stmts = foldM givePriorityReturn null' stmts >>= unwrap
+evalProgram stmts = foldM givePriorityReturn Obj.Void stmts >>= unwrap
   where
     unwrap o = pure
         (if Obj.getObjectType o == Obj.RETURN_VALUE_OBJ
@@ -137,11 +134,8 @@ evalProgram stmts = foldM givePriorityReturn null' stmts >>= unwrap
 
 -- | evalBlockStatement
 --
--- TODO:
--- とりあえず文がひとつもない時は NULL を返す
---
 evalBlockStatement :: [Ast.Statement] -> Evaluator Obj.Object
-evalBlockStatement = foldM givePriorityReturn null'
+evalBlockStatement = foldM givePriorityReturn Obj.Void
 
 -- | evalIdentifire
 --
