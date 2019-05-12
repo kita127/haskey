@@ -92,19 +92,18 @@ instance Node Ast.Statement where
     eval (Ast.ExpressionStatement _ e    ) = eval e
     eval (Ast.BlockStatement      _ stmts) = evalBlockStatement stmts
     eval (Ast.ReturnStatement     _ e    ) = Obj.ReturnValue <$> eval e
-    eval (Ast.LetStatement _ name v      ) =
-        eval v >>= set (Ast.expValue name) >> return Obj.Void
+    eval (Ast.LetStatement _ name v      ) = eval v >>= set (Ast.expValue name) >> return Obj.Void
 
 instance Node Ast.Expression where
     eval (Ast.Identifire     _ v) = evalIdentifire v
     eval (Ast.IntegerLiteral _ v) = pure $ Obj.Integer v
-    eval (Ast.Boolean _ v) =
-        pure (if v then Obj.Boolean True else Obj.Boolean False)
+    eval (Ast.Boolean _ v) = pure (if v then Obj.Boolean True else Obj.Boolean False)
     eval (Ast.PrefixExpression _ op r ) = eval r >>= evalPrefixExpression op
     eval (Ast.InfixExpression _ l op r) = do
         l' <- eval l
         r' <- eval r
         evalInfixExpression op l' r'
+
     eval (Ast.IfExpression _ cond cons alte) = do
         condExpr <- eval cond
         case () of
@@ -176,22 +175,16 @@ evalMinusPrefixOperatorExpression o =
 
 -- | evalInfixExpression
 --
-evalInfixExpression
-    :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
+evalInfixExpression :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
 evalInfixExpression op l r
-    | objTypeL == Obj.INTEGER && objTypeR == Obj.INTEGER
-    = evalIntegerInfixExpression op l r
-    | objTypeL /= objTypeR
-    = fail $ printf "type mismatch: %s %s %s"
+    | objTypeL == Obj.INTEGER && objTypeR == Obj.INTEGER = evalIntegerInfixExpression op l r
+    | objTypeL /= objTypeR = fail $ printf "type mismatch: %s %s %s"
                     (show objTypeL)
                     (T.unpack op)
                     (show objTypeR)
-    | op == "=="
-    = pure $ Obj.Boolean $ l == r
-    | op == "!="
-    = pure $ Obj.Boolean $ l /= r
-    | otherwise
-    = fail $ printf "unknown operator: %s %s %s"
+    | op == "==" = pure $ Obj.Boolean $ l == r
+    | op == "!=" = pure $ Obj.Boolean $ l /= r
+    | otherwise = fail $ printf "unknown operator: %s %s %s"
                     (show objTypeL)
                     (T.unpack op)
                     (show objTypeR)
