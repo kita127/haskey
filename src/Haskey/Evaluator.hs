@@ -6,12 +6,12 @@ module Haskey.Evaluator
     )
 where
 
-import qualified Data.Text                     as T
-import qualified Haskey.Ast                    as Ast
-import qualified Haskey.Object                 as Obj
+import           Control.Monad (foldM)
+import qualified Data.Map      as M
+import qualified Data.Text     as T
+import qualified Haskey.Ast    as Ast
+import qualified Haskey.Object as Obj
 import           Text.Printf
-import           Control.Monad                  ( foldM )
-import qualified Data.Map                      as M
 
 
 
@@ -21,15 +21,15 @@ import qualified Data.Map                      as M
 newtype Evaluator a = Evaluator {runEvalutor :: Obj.Environment -> Result a}
 
 data Result a = Done a Obj.Environment
-            | Error Obj.Object
+            | Error Obj.Object Obj.Environment
     deriving (Eq, Show)
 
 instance Functor Evaluator where
    -- fmap :: (a -> b) -> f a -> f b
     fmap f evalutor = Evaluator
         (\env -> case runEvalutor evalutor env of
-            (Error obj  ) -> Error obj
-            (Done a env') -> Done (f a) env'
+            (Error obj env') -> Error obj env'
+            (Done a env')    -> Done (f a) env'
         )
 
 instance Applicative Evaluator where
@@ -38,22 +38,40 @@ instance Applicative Evaluator where
 -- <*> :: f (a -> b) -> f a -> f b
     af <*> ax = Evaluator
         (\env -> case runEvalutor af env of
-            (Error obj  ) -> Error obj
-            (Done a env') -> runEvalutor (fmap a ax) env'
+            (Error obj env') -> Error obj env'
+            (Done a env')    -> runEvalutor (fmap a ax) env'
         )
 
 instance Monad Evaluator where
    -- (>>=) :: m a -> (a -> m b) -> m b
     mx >>= f = Evaluator
         (\env -> case runEvalutor mx env of
-            (Error obj  ) -> Error obj
-            (Done a env') -> runEvalutor (f a) env'
+            (Error obj env') -> Error obj env'
+            (Done a env')    -> runEvalutor (f a) env'
         )
 -- return :: a -> m a
 -- return's default implementation is pure
 
 -- fail :: String -> m a
-    fail s = Evaluator (\env -> Error (Obj.Error s))
+    fail s = Evaluator (\env -> Error (Obj.Error s) env)
+
+
+-- | set
+--
+set :: T.Text -> Obj.Object -> Evaluator Obj.Object
+set key value = Evaluator (\env -> Done value (newEnv key value env))
+    where newEnv k v e = Obj.Environment $ M.insert k v (Obj.store e)
+
+-- | get
+--
+get :: T.Text -> Evaluator Obj.Object
+get key = Evaluator
+    (\env -> case M.lookup key (Obj.store env) of
+        (Just obj) -> Done obj env
+        Nothing ->
+            Error (Obj.Error (printf "identifier not found: %s" (T.unpack key))) env
+    )
+
 -----------------------------------------------------------------------------
 
 -- | null'
@@ -70,12 +88,18 @@ class Node a where
 instance Node Ast.Program where
     eval = evalProgram . Ast.statements
 
+-- TODO:
+--  let statement が返り値を返してしまっている
+--
 instance Node Ast.Statement where
     eval (Ast.ExpressionStatement _ e    ) = eval e
     eval (Ast.BlockStatement      _ stmts) = evalBlockStatement stmts
     eval (Ast.ReturnStatement     _ e    ) = Obj.ReturnValue <$> eval e
+    eval (Ast.LetStatement _ name v      ) =
+        eval v >>= set (Ast.expValue name) >> return Obj.Void
 
 instance Node Ast.Expression where
+    eval (Ast.Identifire     _ v) = evalIdentifire v
     eval (Ast.IntegerLiteral _ v) = pure $ Obj.Integer v
     eval (Ast.Boolean _ v) =
         pure (if v then Obj.Boolean True else Obj.Boolean False)
@@ -130,6 +154,11 @@ evalProgram stmts = foldM givePriorityReturn null' stmts >>= unwrap
 --
 evalBlockStatement :: [Ast.Statement] -> Evaluator Obj.Object
 evalBlockStatement = foldM givePriorityReturn null'
+
+-- | evalIdentifire
+--
+evalIdentifire :: T.Text -> Evaluator Obj.Object
+evalIdentifire name = get name
 
 -- | evalPrefixExpression
 --

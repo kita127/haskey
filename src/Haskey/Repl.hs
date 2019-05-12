@@ -28,19 +28,25 @@ prompt = ">> "
 --
 start :: IO ()
 start = do
-    putStrLn prompt
-    l <- TIO.getLine
-    let prg = (parse . lexicalize) l
+    loop Obj.newEnvironment
+    where
+      loop env = do
+          putStrLn prompt
+          l <- TIO.getLine
+          let prg = (parse . lexicalize) l
 
-    if hasError prg
-    then do
-        printParseError prg
-        start
-    else do
-        case Evl.runEvalutor (Evl.eval prg) Obj.newEnvironment of
-            (Evl.Done obj _ ) -> TIO.putStrLn $ Obj.inspect obj
-            (Evl.Error obj)   -> TIO.putStrLn $ Obj.inspect obj
-        start
+          if hasError prg
+          then do
+              printParseError prg
+              loop env
+          else do
+              let (obj, env') = (case Evl.runEvalutor (Evl.eval prg) env of
+                                      (Evl.Done obj env' ) -> (obj, env')
+                                      (Evl.Error obj env') -> (obj, env'))
+              if obj /= Obj.Void
+              then TIO.putStrLn $ Obj.inspect obj
+              else return ()
+              loop env'
 
 
 -- | hasError

@@ -19,6 +19,7 @@ main = do
         , testIfElseExpressions
         , testReturnStatements
         , testErrorHandling
+        , testLetStatement
         ]
     return ()
 
@@ -33,8 +34,8 @@ _program = Prs.parse . Lex.lexicalize
 
 _object :: T.Text -> Obj.Object
 _object s = case Evl.runEvalutor evaluator Obj.newEnvironment of
-    (Evl.Done obj _) -> obj
-    (Evl.Error err)  -> err
+    (Evl.Done obj _)  -> obj
+    (Evl.Error err _) -> err
   where
     evaluator = (Evl.eval . _program ) s
 
@@ -351,6 +352,7 @@ testErrorHandling = TestList
     , "testErrorHandling 5" ~: _evalObject "5; true + false; 5" ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
     , "testErrorHandling 6" ~: _evalObject "if (10 > 1) { true + false; }" ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
     , "testErrorHandling 7" ~: _evalObject test7 ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
+    , "testErrorHandling 8" ~: _evalObject "foobar" ~?= ObErr "identifier not found: foobar"
     ]
   where
     test7 = [r|
@@ -363,3 +365,13 @@ if (10 > 1) {
 }
 |]
 
+
+-- | testLetStatement
+--
+testLetStatement :: Test
+testLetStatement = TestList
+    [ "testLetStatement 1" ~: _evalObject "let a = 5; a;" ~?= ObInt 5
+    , "testLetStatement 2" ~: _evalObject "let a = 5 * 5; a;" ~?= ObInt 25
+    , "testLetStatement 3" ~: _evalObject "let a = 5; let b = a; b;" ~?= ObInt 5
+    , "testLetStatement 4" ~: _evalObject "let a = 5; let b = a; let c = a + b + 5; c;" ~?= ObInt 15
+    ]
