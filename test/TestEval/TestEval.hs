@@ -2,7 +2,7 @@
 {-# LANGUAGE QuasiQuotes       #-}
 import qualified Data.Text         as T
 import qualified Haskey.Ast        as Ast
-import qualified Haskey.Evaluator  as Eval
+import qualified Haskey.Evaluator  as Evl
 import qualified Haskey.Lexer      as Lex
 import qualified Haskey.Object     as Obj
 import qualified Haskey.Parser     as Prs
@@ -32,9 +32,11 @@ _program :: T.Text -> Ast.Program
 _program = Prs.parse . Lex.lexicalize
 
 _object :: T.Text -> Obj.Object
-_object s = case (Eval.eval . _program) s of
-    (Right obj) -> obj
-    (Left err) -> err
+_object s = case Evl.runEvalutor evaluator Evl.newEnvironment of
+    (Evl.Done obj _) -> obj
+    (Evl.Error err)  -> err
+  where
+    evaluator = (Evl.eval . _program ) s
 
 _boolValue :: T.Text -> Bool
 _boolValue = Obj.boolVal . _object

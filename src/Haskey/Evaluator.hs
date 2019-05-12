@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Haskey.Evaluator
     ( eval
+    , runEvalutor
+    , newEnvironment
+    , Result(..)
     )
 where
 
@@ -9,17 +12,67 @@ import qualified Haskey.Ast                    as Ast
 import qualified Haskey.Object                 as Obj
 import           Text.Printf
 import           Control.Monad                  ( foldM )
+import qualified Data.Map                      as M
+
+
 
 -- | null'
 null' :: Obj.Object
 null' = Obj.Null
+
+-----------------------------------------------------------------------------
+data Environment = Environment {
+                     store :: M.Map T.Text Obj.Object
+                   }
+    deriving (Eq, Show)
+
+newtype Evaluator a = Evaluator {runEvalutor :: Environment -> Result a}
+
+data Result a = Done a Environment
+            | Error Obj.Object
+    deriving (Eq, Show)
+
+instance Functor Evaluator where
+   -- fmap :: (a -> b) -> f a -> f b
+    fmap f evalutor = Evaluator
+        (\env -> case runEvalutor evalutor env of
+            (Error obj  ) -> Error obj
+            (Done a env') -> Done (f a) env'
+        )
+
+instance Applicative Evaluator where
+   -- pure :: a -> f a
+    pure v = Evaluator (\env -> Done v env)
+-- <*> :: f (a -> b) -> f a -> f b
+    af <*> ax = Evaluator
+        (\env -> case runEvalutor af env of
+            (Error obj  ) -> Error obj
+            (Done a env') -> runEvalutor (fmap a ax) env'
+        )
+
+instance Monad Evaluator where
+   -- (>>=) :: m a -> (a -> m b) -> m b
+    mx >>= f = Evaluator
+        (\env -> case runEvalutor mx env of
+            (Error obj  ) -> Error obj
+            (Done a env') -> runEvalutor (f a) env'
+        )
+-- return :: a -> m a
+-- return's default implementation is pure
+
+-- fail :: String -> m a
+    fail s = Evaluator (\env -> Error (Obj.Error s))
+-----------------------------------------------------------------------------
+
+newEnvironment :: Environment
+newEnvironment = Environment $ M.fromList []
 
 type ErrorObj = Obj.Object
 
 -- | class Node
 --
 class Node a where
-    eval :: a -> Either ErrorObj Obj.Object
+    eval :: a -> Evaluator Obj.Object
 
 instance Node Ast.Program where
     eval = evalProgram . Ast.statements
@@ -46,12 +99,20 @@ instance Node Ast.Expression where
               | otherwise                -> return null'
 
 
+-- | getEnv
+--
+getEnv :: Environment -> T.Text -> Maybe Obj.Object
+getEnv env name = M.lookup name (store env)
 
+-- | setEnv
+--
+setEnv :: Environment -> T.Text -> Obj.Object -> Environment
+setEnv = undefined
 
 
 -- | givePriorityReturn
 --
-givePriorityReturn :: Obj.Object -> Ast.Statement -> Either ErrorObj Obj.Object
+givePriorityReturn :: Obj.Object -> Ast.Statement -> Evaluator Obj.Object
 givePriorityReturn a s =
     if Obj.getObjectType a == Obj.RETURN_VALUE_OBJ then pure a else eval s
 
@@ -69,7 +130,7 @@ isRetOrErr o =
 -- TODO:
 -- とりあえず文がひとつもない時は NULL を返す
 --
-evalProgram :: [Ast.Statement] -> Either ErrorObj Obj.Object
+evalProgram :: [Ast.Statement] -> Evaluator Obj.Object
 evalProgram stmts = foldM givePriorityReturn null' stmts >>= unwrap
   where
     unwrap o = pure
@@ -83,22 +144,22 @@ evalProgram stmts = foldM givePriorityReturn null' stmts >>= unwrap
 -- TODO:
 -- とりあえず文がひとつもない時は NULL を返す
 --
-evalBlockStatement :: [Ast.Statement] -> Either ErrorObj Obj.Object
+evalBlockStatement :: [Ast.Statement] -> Evaluator Obj.Object
 evalBlockStatement = foldM givePriorityReturn null'
 
 -- | evalPrefixExpression
 --
-evalPrefixExpression :: T.Text -> Obj.Object -> Either ErrorObj Obj.Object
+evalPrefixExpression :: T.Text -> Obj.Object -> Evaluator Obj.Object
 evalPrefixExpression "!" right = evalBangOperatorExpression right
 evalPrefixExpression "-" right = evalMinusPrefixOperatorExpression right
-evalPrefixExpression op  right = Left $ newError $ printf
+evalPrefixExpression op  right = fail $ printf
     "unknown operator: %s%s"
     (T.unpack op)
     (show (Obj.getObjectType right))
 
 -- | evalBangOperatorExpression
 --
-evalBangOperatorExpression :: Obj.Object -> Either ErrorObj Obj.Object
+evalBangOperatorExpression :: Obj.Object -> Evaluator Obj.Object
 evalBangOperatorExpression (Obj.Boolean True ) = pure $ Obj.Boolean False
 evalBangOperatorExpression (Obj.Boolean False) = pure $ Obj.Boolean True
 evalBangOperatorExpression Obj.Null            = pure $ Obj.Boolean True
@@ -106,33 +167,32 @@ evalBangOperatorExpression _                   = pure $ Obj.Boolean False
 
 -- | evalMinusPrefixOperatorExpression
 --
-evalMinusPrefixOperatorExpression :: Obj.Object -> Either ErrorObj Obj.Object
+evalMinusPrefixOperatorExpression :: Obj.Object -> Evaluator Obj.Object
 evalMinusPrefixOperatorExpression (Obj.Integer v) = pure $ Obj.Integer (-v)
-evalMinusPrefixOperatorExpression o               = Left $ newError $ printf
-    "unknown operator: -%s"
-    (show (Obj.getObjectType o))
+evalMinusPrefixOperatorExpression o =
+    fail $ printf "unknown operator: -%s" (show (Obj.getObjectType o))
 
 -- | evalInfixExpression
 --
 evalInfixExpression
-    :: T.Text -> Obj.Object -> Obj.Object -> Either ErrorObj Obj.Object
+    :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
 evalInfixExpression op l r
     | objTypeL == Obj.INTEGER && objTypeR == Obj.INTEGER
     = evalIntegerInfixExpression op l r
     | objTypeL /= objTypeR
-    = Left $ newError $ printf "type mismatch: %s %s %s"
-                               (show objTypeL)
-                               (T.unpack op)
-                               (show objTypeR)
+    = fail $ printf "type mismatch: %s %s %s"
+                    (show objTypeL)
+                    (T.unpack op)
+                    (show objTypeR)
     | op == "=="
     = pure $ Obj.Boolean $ l == r
     | op == "!="
     = pure $ Obj.Boolean $ l /= r
     | otherwise
-    = Left $ newError $ printf "unknown operator: %s %s %s"
-                               (show objTypeL)
-                               (T.unpack op)
-                               (show objTypeR)
+    = fail $ printf "unknown operator: %s %s %s"
+                    (show objTypeL)
+                    (T.unpack op)
+                    (show objTypeR)
   where
     objTypeL = Obj.getObjectType l
     objTypeR = Obj.getObjectType r
@@ -141,7 +201,7 @@ evalInfixExpression op l r
 -- | evalIntegerInfixExpression
 --
 evalIntegerInfixExpression
-    :: T.Text -> Obj.Object -> Obj.Object -> Either ErrorObj Obj.Object
+    :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
 evalIntegerInfixExpression "+" l r =
     pure $ Obj.Integer $ Obj.intVal l + Obj.intVal r
 evalIntegerInfixExpression "-" l r =
@@ -156,7 +216,7 @@ evalIntegerInfixExpression ">" l r =
     pure $ Obj.Boolean $ Obj.intVal l > Obj.intVal r
 evalIntegerInfixExpression "==" l r = pure $ Obj.Boolean $ l == r
 evalIntegerInfixExpression "!=" l r = pure $ Obj.Boolean $ l /= r
-evalIntegerInfixExpression op   l r = Left $ newError $ printf
+evalIntegerInfixExpression op   l r = fail $ printf
     "unknown operator: %s %s %s"
     (show objTypeL)
     (T.unpack op)

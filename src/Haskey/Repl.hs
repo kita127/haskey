@@ -7,7 +7,7 @@ module Haskey.Repl (
 import qualified Data.Text         as T
 import qualified Data.Text.IO      as TIO
 import qualified Haskey.Ast        as Ast
-import           Haskey.Evaluator
+import           Haskey.Evaluator  as Evl
 import           Haskey.Lexer
 import           Haskey.Object     as Obj
 import           Haskey.Parser
@@ -37,9 +37,9 @@ start = do
         printParseError prg
         start
     else do
-        case eval prg of
-            (Right obj) -> TIO.putStrLn $ Obj.inspect obj
-            (Left err) -> TIO.putStrLn $ Obj.inspect err
+        case Evl.runEvalutor (Evl.eval prg) Evl.newEnvironment of
+            (Evl.Done obj _ ) -> TIO.putStrLn $ Obj.inspect obj
+            (Evl.Error obj)   -> TIO.putStrLn $ Obj.inspect obj
         start
 
 
