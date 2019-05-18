@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+import qualified Data.Map          as M
 import qualified Data.Text         as T
 import qualified Haskey.Ast        as Ast
 import qualified Haskey.Evaluator  as Evl
@@ -34,12 +35,17 @@ data Ob = ObInt Integer | ObNull | ObErr String| Unexpected String
 _program :: T.Text -> Ast.Program
 _program = Prs.parse . Lex.lexicalize
 
+_evaluator = Evl.eval . _program
+
 _object :: T.Text -> Obj.Object
-_object s = case Evl.runEvalutor evaluator Obj.newEnvironment of
+_object s = case Evl.runEvalutor (_evaluator s) Obj.newEnvironment of
     (Evl.Done obj _)  -> obj
     (Evl.Error err _) -> err
-  where
-    evaluator = (Evl.eval . _program ) s
+
+_environment :: T.Text -> Either Obj.Environment Obj.Environment
+_environment s = case Evl.runEvalutor (_evaluator s) Obj.newEnvironment of
+    (Evl.Done _ e)  -> Right e
+    (Evl.Error _ e) -> Left e
 
 _boolValue :: T.Text -> Bool
 _boolValue = Obj.boolVal . _object
@@ -403,6 +409,8 @@ testFunctionApplication = TestList
     , "function application 4" ~: _evalObject input4 ~?= ObInt 10
     , "function application 5" ~: _evalObject input5 ~?= ObInt 20
     , "function application 6" ~: _evalObject input6 ~?= ObInt 5
+    , "closure 1" ~: _evalObject inputClosure1 ~?= ObInt 4
+    , "closure 2" ~: _evalObject inputClosure2 ~?= ObInt 155
     ]
   where
     input1 = "let identity = fn(x) { x; }; identity(5);"
@@ -412,3 +420,23 @@ testFunctionApplication = TestList
     input5 = "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));"
     input6 = "fn(x) { x; }(5)"
 
+    inputClosure1 = [r|
+let newAdder = fn(x) {
+  fn(y) { x + y };
+};
+
+let addTwo = newAdder(2);
+addTwo(2);
+|]
+
+    inputClosure2 = [r|
+let add = fn(a, b) { a + b };
+let applyFunc = fn(a, b, func) { func(a, b) };
+applyFunc(100, 55, add);
+|]
+
+    assertEnv Obj.NothingEnv        = []
+    assertEnv (Obj.Environment s o) = M.keys s ++ assertEnv o
+
+    unwrap (Right e) = e
+    unwrap (Left e)  = e

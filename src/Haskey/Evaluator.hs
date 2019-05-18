@@ -237,14 +237,16 @@ applyFunction :: Obj.Object -> [Obj.Object] -> Evaluator Obj.Object
 applyFunction function args = do
     expectObj Obj.FUNCTION function
     let params = M.fromList $ zip (map Ast.expValue . Obj.parameters $ function) args
-    evaluated <- evalInExtendEnv (Obj.body function) params
+        extendEnv = Obj.newEnclosedEnvironment params (Obj.env function)
+    evaluated <- evalInExtendEnv (Obj.body function) extendEnv
     return $ unwrapReturnValue evaluated
 
 
-evalInExtendEnv :: Node a => a -> M.Map T.Text Obj.Object -> Evaluator Obj.Object
-evalInExtendEnv node params = do
+-- | evalInExtendEnv
+--
+evalInExtendEnv :: Node a => a -> Obj.Environment -> Evaluator Obj.Object
+evalInExtendEnv node extendEnv = do
     env <- getEnv
-    let extendEnv = Obj.newEnclosedEnvironment params env
     modifyEnv extendEnv
     res <- eval node
     modifyEnv env

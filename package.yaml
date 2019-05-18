@@ -71,3 +71,4 @@ tests:
     - HUnit
     - raw-strings-qq
     - text
+    - containers
