@@ -9,13 +9,15 @@ module Haskey.Object
     )
 where
 
-import qualified Data.Map  as M
-import qualified Data.Text as T
+import qualified Data.Map   as M
+import qualified Data.Text  as T
+import qualified Haskey.Ast as Ast
 
 data ObjectType = NULL_OBJ
                 | INTEGER
                 | BOOLEAN
                 | RETURN_VALUE_OBJ
+                | FUNCTION
                 | VOID
                 | ERROR
     deriving (Eq, Show)
@@ -30,6 +32,11 @@ data Object = Null
               }
             | ReturnValue {
                 returnVal :: Object
+              }
+            | Function {
+                parameters :: [Ast.Expression]      -- Identifire
+              , body       :: Ast.Statement               -- BlockStatement
+              , env        :: Environment
               }
             | Void      -- 返り値を返さないオブジェクト let 文など
             | Error {
@@ -55,6 +62,12 @@ inspect Null              = "null"
 inspect (Integer     v  ) = T.pack . show $ v
 inspect (Boolean     v  ) = T.pack . show $ v
 inspect (ReturnValue v  ) = inspect v
+inspect (Function p b _)  = inspectFunction p b
+  where
+    inspectFunction param' body'
+        = "fn" <>  "(" <> params param' <> ") {\n" <> Ast.string body' <> "\n}"
+    params = T.intercalate ", " . map Ast.string
+
 inspect Void              = ""
 inspect (Error       msg) = T.pack $ "ERROR: " ++ msg
 
@@ -66,5 +79,6 @@ getObjectType Null            = NULL_OBJ
 getObjectType (Integer     _) = INTEGER
 getObjectType (Boolean     _) = BOOLEAN
 getObjectType (ReturnValue _) = RETURN_VALUE_OBJ
+getObjectType Function {}     = FUNCTION
 getObjectType Void            = VOID
 getObjectType (Error       _) = ERROR

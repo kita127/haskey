@@ -20,6 +20,7 @@ main = do
         , testReturnStatements
         , testErrorHandling
         , testLetStatement
+        , testFunctionObject
         ]
     return ()
 
@@ -375,3 +376,17 @@ testLetStatement = TestList
     , "testLetStatement 3" ~: _evalObject "let a = 5; let b = a; b;" ~?= ObInt 5
     , "testLetStatement 4" ~: _evalObject "let a = 5; let b = a; let c = a + b + 5; c;" ~?= ObInt 15
     ]
+
+-- | testFunctionObject
+--
+testFunctionObject :: Test
+testFunctionObject = TestList
+    [ "Is function obj? 1" ~: (isFunctionObj . _object) input1 ~?= Right True
+    , "params length 1" ~: (length . Obj.parameters . _object) input1 ~?= 1
+    , "params contents 1" ~: (Ast.string . head . Obj.parameters . _object) input1 ~?= "x"
+    , "body contents 1" ~: (Ast.string . Obj.body . _object) input1 ~?= "(x + 2)"
+    ]
+  where
+    input1 = "fn(x) { x + 2; };"
+    isFunctionObj Obj.Function{} = Right True
+    isFunctionObj o              = Left $ Obj.getObjectType o

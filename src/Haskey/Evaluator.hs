@@ -72,6 +72,11 @@ get key = Evaluator
             Error (Obj.Error (printf "identifier not found: %s" (T.unpack key))) env
     )
 
+-- | getEnv
+--
+getEnv :: Evaluator Obj.Environment
+getEnv = Evaluator (\env -> Done env env)
+
 -----------------------------------------------------------------------------
 
 -- | null'
@@ -99,6 +104,7 @@ instance Node Ast.Expression where
     eval (Ast.IntegerLiteral _ v) = pure $ Obj.Integer v
     eval (Ast.Boolean _ v) = pure (if v then Obj.Boolean True else Obj.Boolean False)
     eval (Ast.PrefixExpression _ op r ) = eval r >>= evalPrefixExpression op
+    eval (Ast.FunctionLiteral _ params' body') = Obj.Function params' body' <$> getEnv
     eval (Ast.InfixExpression _ l op r) = do
         l' <- eval l
         r' <- eval r
