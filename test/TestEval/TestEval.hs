@@ -21,6 +21,7 @@ main = do
         , testErrorHandling
         , testLetStatement
         , testFunctionObject
+        , testFunctionApplication
         ]
     return ()
 
@@ -390,3 +391,24 @@ testFunctionObject = TestList
     input1 = "fn(x) { x + 2; };"
     isFunctionObj Obj.Function{} = Right True
     isFunctionObj o              = Left $ Obj.getObjectType o
+
+
+-- | testFunctionApplication
+--
+testFunctionApplication :: Test
+testFunctionApplication = TestList
+    [ "function application 1" ~: _evalObject input1 ~?= ObInt 5
+    , "function application 2" ~: _evalObject input2 ~?= ObInt 5
+    , "function application 3" ~: _evalObject input3 ~?= ObInt 10
+    , "function application 4" ~: _evalObject input4 ~?= ObInt 10
+    , "function application 5" ~: _evalObject input5 ~?= ObInt 20
+    , "function application 6" ~: _evalObject input6 ~?= ObInt 5
+    ]
+  where
+    input1 = "let identity = fn(x) { x; }; identity(5);"
+    input2 = "let identity = fn(x) { return x; }; identity(5);"
+    input3 = "let double = fn(x) { x * 2; }; double(5);"
+    input4 = "let add = fn(x, y) { x + y; }; add(5, 5);"
+    input5 = "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));"
+    input6 = "fn(x) { x; }(5)"
+

@@ -6,6 +6,7 @@ module Haskey.Object
     , inspect
     , getObjectType
     , newEnvironment
+    , newEnclosedEnvironment
     )
 where
 
@@ -35,7 +36,7 @@ data Object = Null
               }
             | Function {
                 parameters :: [Ast.Expression]      -- Identifire
-              , body       :: Ast.Statement               -- BlockStatement
+              , body       :: Ast.Statement         -- BlockStatement
               , env        :: Environment
               }
             | Void      -- 返り値を返さないオブジェクト let 文など
@@ -44,15 +45,25 @@ data Object = Null
               }
             deriving (Eq, Show)
 
+-- TODO:
+-- Evalutor 側で定義して良い気がする
+--
 data Environment = Environment {
                      store :: M.Map T.Text Object
+                   , outer :: Environment
                    }
+                 | NothingEnv
     deriving (Eq, Show)
 
 -- | newEnvironment
 --
 newEnvironment :: Environment
-newEnvironment = Environment $ M.fromList []
+newEnvironment = Environment (M.fromList []) NothingEnv
+
+-- | newEnclosedEnvironment
+--
+newEnclosedEnvironment :: M.Map T.Text Object -> Environment -> Environment
+newEnclosedEnvironment = Environment
 
 
 -- | inspect

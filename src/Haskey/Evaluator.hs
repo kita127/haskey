@@ -60,22 +60,33 @@ instance Monad Evaluator where
 --
 set :: T.Text -> Obj.Object -> Evaluator Obj.Object
 set key value = Evaluator (\env -> Done value (newEnv key value env))
-    where newEnv k v e = Obj.Environment $ M.insert k v (Obj.store e)
+    where newEnv k v e = Obj.Environment (M.insert k v (Obj.store e)) (Obj.outer e)
 
 -- | get
 --
 get :: T.Text -> Evaluator Obj.Object
-get key = Evaluator
-    (\env -> case M.lookup key (Obj.store env) of
-        (Just obj) -> Done obj env
-        Nothing ->
-            Error (Obj.Error (printf "identifier not found: %s" (T.unpack key))) env
-    )
+get key = Evaluator (\env -> case lookupIdent env key of
+            (Just obj) -> Done obj env
+            Nothing -> Error (Obj.Error (printf "identifier not found: %s" (T.unpack key))) env)
+
+
+-- | lookupIdent
+--
+lookupIdent :: Obj.Environment -> T.Text -> Maybe Obj.Object
+lookupIdent Obj.NothingEnv _ = Nothing
+lookupIdent env key = case M.lookup key (Obj.store env) of
+        (Just obj) -> Just obj
+        Nothing    -> lookupIdent (Obj.outer env) key
 
 -- | getEnv
 --
 getEnv :: Evaluator Obj.Environment
 getEnv = Evaluator (\env -> Done env env)
+
+-- | modifyEnv
+--
+modifyEnv :: Obj.Environment -> Evaluator ()
+modifyEnv newEnv = Evaluator (\_ -> Done () newEnv)
 
 -----------------------------------------------------------------------------
 
@@ -105,6 +116,11 @@ instance Node Ast.Expression where
     eval (Ast.Boolean _ v) = pure (if v then Obj.Boolean True else Obj.Boolean False)
     eval (Ast.PrefixExpression _ op r ) = eval r >>= evalPrefixExpression op
     eval (Ast.FunctionLiteral _ params' body') = Obj.Function params' body' <$> getEnv
+    eval (Ast.CallExpression _ func args) = do
+        f <- eval func
+        as <- mapM eval args
+        applyFunction f as
+
     eval (Ast.InfixExpression _ l op r) = do
         l' <- eval l
         r' <- eval r
@@ -130,13 +146,7 @@ givePriorityReturn a s =
 -- | evalProgram
 --
 evalProgram :: [Ast.Statement] -> Evaluator Obj.Object
-evalProgram stmts = foldM givePriorityReturn Obj.Void stmts >>= unwrap
-  where
-    unwrap o = pure
-        (if Obj.getObjectType o == Obj.RETURN_VALUE_OBJ
-            then Obj.returnVal o
-            else o
-        )
+evalProgram stmts = unwrapReturnValue <$> foldM givePriorityReturn Obj.Void stmts
 
 -- | evalBlockStatement
 --
@@ -219,6 +229,42 @@ evalIntegerInfixExpression op   l r = fail $ printf
   where
     objTypeL = Obj.getObjectType l
     objTypeR = Obj.getObjectType r
+
+
+-- | applyFunction
+--
+applyFunction :: Obj.Object -> [Obj.Object] -> Evaluator Obj.Object
+applyFunction function args = do
+    expectObj Obj.FUNCTION function
+    let params = M.fromList $ zip (map Ast.expValue . Obj.parameters $ function) args
+    evaluated <- evalInExtendEnv (Obj.body function) params
+    return $ unwrapReturnValue evaluated
+
+
+evalInExtendEnv :: Node a => a -> M.Map T.Text Obj.Object -> Evaluator Obj.Object
+evalInExtendEnv node params = do
+    env <- getEnv
+    let extendEnv = Obj.newEnclosedEnvironment params env
+    modifyEnv extendEnv
+    res <- eval node
+    modifyEnv env
+    return res
+
+
+-- | expectObj
+--
+expectObj :: Obj.ObjectType -> Obj.Object -> Evaluator ()
+expectObj expected obj = do
+    let objType = Obj.getObjectType obj
+    if objType == expected
+    then return ()
+    else fail $ printf "not a function: %s" (show objType)
+
+-- | unwrapReturnValue
+--
+unwrapReturnValue :: Obj.Object -> Obj.Object
+unwrapReturnValue (Obj.ReturnValue v) = v
+unwrapReturnValue obj                 = obj
 
 -- | isTruthy
 --
