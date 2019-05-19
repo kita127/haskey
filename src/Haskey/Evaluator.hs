@@ -6,7 +6,7 @@ module Haskey.Evaluator
     )
 where
 
-import           Control.Monad (foldM)
+import           Control.Monad (foldM, join, liftM2)
 import qualified Data.Map      as M
 import qualified Data.Text     as T
 import qualified Haskey.Ast    as Ast
@@ -94,8 +94,6 @@ modifyEnv newEnv = Evaluator (\_ -> Done () newEnv)
 null' :: Obj.Object
 null' = Obj.Null
 
-type ErrorObj = Obj.Object
-
 -- | class Node
 --
 class Node a where
@@ -116,31 +114,22 @@ instance Node Ast.Expression where
     eval (Ast.Boolean _ v) = pure (if v then Obj.Boolean True else Obj.Boolean False)
     eval (Ast.PrefixExpression _ op r ) = eval r >>= evalPrefixExpression op
     eval (Ast.FunctionLiteral _ params' body') = Obj.Function params' body' <$> getEnv
-    eval (Ast.CallExpression _ func args) = do
-        f <- eval func
-        as <- mapM eval args
-        applyFunction f as
+    eval (Ast.CallExpression _ func args) = join $ liftM2 applyFunction (eval func) (mapM eval args)
+    eval (Ast.InfixExpression _ l op r) = join $ liftM2 (evalInfixExpression op) (eval l) (eval r)
+    eval (Ast.IfExpression _ cond cons alte) = eval cond >>= (\c -> if isTruthy c then eval cons else evalIfExists alte)
 
-    eval (Ast.InfixExpression _ l op r) = do
-        l' <- eval l
-        r' <- eval r
-        evalInfixExpression op l' r'
-
-    eval (Ast.IfExpression _ cond cons alte) = do
-        condExpr <- eval cond
-        case () of
-            _ | isTruthy condExpr        -> eval cons
-              | alte /= Ast.NilStatement -> eval alte
-              | otherwise                -> return null'
-
-
+-- | evalIfExists
+--
+evalIfExists :: Ast.Statement -> Evaluator Obj.Object
+evalIfExists Ast.NilStatement = return null'
+evalIfExists alte             = eval alte
 
 
 -- | givePriorityReturn
 --
 givePriorityReturn :: Obj.Object -> Ast.Statement -> Evaluator Obj.Object
-givePriorityReturn a s =
-    if Obj.getObjectType a == Obj.RETURN_VALUE_OBJ then pure a else eval s
+givePriorityReturn r@(Obj.ReturnValue _) _ = pure r
+givePriorityReturn _ s                     = eval s
 
 
 -- | evalProgram
@@ -207,18 +196,12 @@ evalInfixExpression op l r
 --
 evalIntegerInfixExpression
     :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
-evalIntegerInfixExpression "+" l r =
-    pure $ Obj.Integer $ Obj.intVal l + Obj.intVal r
-evalIntegerInfixExpression "-" l r =
-    pure $ Obj.Integer $ Obj.intVal l - Obj.intVal r
-evalIntegerInfixExpression "*" l r =
-    pure $ Obj.Integer $ Obj.intVal l * Obj.intVal r
-evalIntegerInfixExpression "/" l r =
-    pure $ Obj.Integer $ Obj.intVal l `div` Obj.intVal r
-evalIntegerInfixExpression "<" l r =
-    pure $ Obj.Boolean $ Obj.intVal l < Obj.intVal r
-evalIntegerInfixExpression ">" l r =
-    pure $ Obj.Boolean $ Obj.intVal l > Obj.intVal r
+evalIntegerInfixExpression "+" l r = pure $ Obj.Integer $ Obj.intVal l + Obj.intVal r
+evalIntegerInfixExpression "-" l r = pure $ Obj.Integer $ Obj.intVal l - Obj.intVal r
+evalIntegerInfixExpression "*" l r = pure $ Obj.Integer $ Obj.intVal l * Obj.intVal r
+evalIntegerInfixExpression "/" l r = pure $ Obj.Integer $ Obj.intVal l `div` Obj.intVal r
+evalIntegerInfixExpression "<" l r = pure $ Obj.Boolean $ Obj.intVal l < Obj.intVal r
+evalIntegerInfixExpression ">" l r = pure $ Obj.Boolean $ Obj.intVal l > Obj.intVal r
 evalIntegerInfixExpression "==" l r = pure $ Obj.Boolean $ l == r
 evalIntegerInfixExpression "!=" l r = pure $ Obj.Boolean $ l /= r
 evalIntegerInfixExpression op   l r = fail $ printf
@@ -275,4 +258,3 @@ isTruthy Obj.Null            = False
 isTruthy (Obj.Boolean True ) = True
 isTruthy (Obj.Boolean False) = False
 isTruthy _                   = True
-
