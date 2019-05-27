@@ -55,6 +55,8 @@ data TokenType = Illegal
                | TRUE           -- "true"
                | FALSE          -- "false"
                | Return         -- "return"
+
+               | STRING         -- string
                deriving (Eq, Show, Ord)
 
 -- | keywords

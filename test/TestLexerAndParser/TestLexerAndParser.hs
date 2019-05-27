@@ -32,11 +32,6 @@ main = do
     return ()
 
 
-testSample :: Test
-testSample = TestList
-  [ "testSample test 1" ~:
-        "hello test" ~?= "hello test"
-  ]
 
 
 -- | lexicalize
@@ -181,7 +176,21 @@ testLexer = TestList
         -- EOF
         , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
         ]
+
+  , "testLexer test 5 string literal" ~:
+        Lx.lexicalize testLexerInput5 ~?= [
+          Tok.Token { Tok.tokenType = Tok.STRING , Tok.literal = "foobar" }
+        , Tok.Token { Tok.tokenType = Tok.STRING , Tok.literal = "foo bar" }
+
+        -- EOF
+        , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
+        ]
   ]
+  where
+    testLexerInput5 = [r|
+"foobar"
+"foo bar"
+|]
 
 -- | parser
 -- ---------------------------------------------------------------------------------

@@ -39,6 +39,7 @@ nextToken s | T.null s            = (eof, "")
             | ch == ','           = (newToken Tok.Comma ch, remain)
             | ch == '{'           = (newToken Tok.Lbrace ch, remain)
             | ch == '}'           = (newToken Tok.Rbrace ch, remain)
+            | ch == '"'           = readString s
             | isLetter ch         = readIdentifire s
             | C.isDigit ch        = readNumber s
             | otherwise           = (newToken Tok.Illegal ch, remain)
@@ -75,6 +76,13 @@ readNumber s = (tok, remain)
     num    = T.takeWhile C.isDigit s
     remain = T.dropWhile C.isDigit s
     tok    = Tok.Token { Tok.tokenType = Tok.Int, Tok.literal = num }
+
+readString :: T.Text -> (Tok.Token, T.Text)
+readString s = (tok, remain)
+  where
+    tok = Tok.Token Tok.STRING lit
+    remain = T.tail . T.dropWhile (/= '"') . T.tail $ s
+    lit = T.takeWhile (/= '"') . T.tail $ s
 
 -- | readFix
 --
