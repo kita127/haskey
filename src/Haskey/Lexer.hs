@@ -4,10 +4,10 @@ module Haskey.Lexer
     )
 where
 
-import qualified Data.Char                     as C
-import           Data.Maybe                     ( fromJust )
-import qualified Data.Text                     as T
-import           Haskey.Token                  as Tok
+import qualified Data.Char    as C
+import           Data.Maybe   (fromJust)
+import qualified Data.Text    as T
+import           Haskey.Token as Tok
 
 
 -- | lexicalize
