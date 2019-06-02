@@ -139,6 +139,7 @@ prefixParseFns = M.fromList
     , (Tok.If      , parseIfExpression)
     , (Tok.Function, parseFunctionLiteral)
     , (Tok.Lparen  , parseGroupedExpression)
+    , (Tok.STRING  , parseStringLiteral)
     ]
 
 -- | infixParseFns
@@ -354,9 +355,17 @@ parseCallExpression function =
 parseGroupedExpression :: Parser Ast.Expression
 parseGroupedExpression = do
     nextToken
-    expression <- parseExpression (Lowest)
+    expression <- parseExpression Lowest
     next (expectPeek Tok.Rparen)
     return expression
+
+-- | parseStringLiteral
+--
+parseStringLiteral :: Parser Ast.Expression
+parseStringLiteral =
+    Ast.StringLiteral
+        <$> curToken
+        <*> (Tok.literal <$> curToken)
 
 
 -- | parseFn

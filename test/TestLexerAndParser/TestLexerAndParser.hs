@@ -26,6 +26,7 @@ main = do
       , testCallExpressionParsing
       , testLetStatements
       , testReturnStatements
+      , testStringLiteral
 
       , testInvalid
       ]
@@ -612,6 +613,26 @@ testReturnStatements = TestList
     input3 = "return y;"
     testReturn = Tok.literal . Ast.stmtToken . head . _statements
     testValue =  testExpContents . Ast.returnValue . head . _statements
+
+
+-- | testStringLiteral
+--
+testStringLiteral :: Test
+testStringLiteral = TestList
+  [ "testStringLiteral contents" ~: (extractExpression input1 >>= _test)  ~?=
+        Right "hello world"
+
+  ]
+  where
+    input1 = [r|"hello world";|]
+
+    _test (Ast.StringLiteral _ s) = Right s
+    _test x = Left $ Ast.string x
+
+    extractExpression input = case (head . _statements) input of
+        (Ast.ExpressionStatement _ expr) -> Right expr
+        stms -> Left $ Ast.string stms
+
 
 
 -- | testInvalid

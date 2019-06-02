@@ -106,6 +106,10 @@ data Expression = Identifire {
                   , function  :: Expression    -- Identifire or FunctionLiteral
                   , arguments :: [Expression]
                   }
+                | StringLiteral {
+                    expToken  :: Tok.Token
+                  , expValue  :: T.Text
+                  }
                 deriving (Eq, Show)
 
 instance Stringer Expression where
@@ -121,6 +125,7 @@ instance Stringer Expression where
         "fn" <> "(" <> T.intercalate ", " (map string ps) <> ")" <> string b
     string (CallExpression _ f as) =
         string f <> "(" <> T.intercalate ", " (map string as) <> ")"
+    string (StringLiteral _ s) = s
 
 
 -- | elseStr
