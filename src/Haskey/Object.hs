@@ -18,6 +18,7 @@ data ObjectType = NULL_OBJ
                 | INTEGER
                 | BOOLEAN
                 | RETURN_VALUE_OBJ
+                | STRING_OBJ
                 | FUNCTION
                 | VOID
                 | ERROR
@@ -33,6 +34,9 @@ data Object = Null
               }
             | ReturnValue {
                 returnVal :: Object
+              }
+            | String {
+                strVal :: T.Text
               }
             | Function {
                 parameters :: [Ast.Expression]      -- Identifire
@@ -73,6 +77,7 @@ inspect Null              = "null"
 inspect (Integer     v  ) = T.pack . show $ v
 inspect (Boolean     v  ) = T.pack . show $ v
 inspect (ReturnValue v  ) = inspect v
+inspect (String v ) = v
 inspect (Function p b _)  = inspectFunction p b
   where
     inspectFunction param' body'
@@ -90,6 +95,7 @@ getObjectType Null            = NULL_OBJ
 getObjectType (Integer     _) = INTEGER
 getObjectType (Boolean     _) = BOOLEAN
 getObjectType (ReturnValue _) = RETURN_VALUE_OBJ
+getObjectType String {}       = STRING_OBJ
 getObjectType Function {}     = FUNCTION
 getObjectType Void            = VOID
 getObjectType (Error       _) = ERROR

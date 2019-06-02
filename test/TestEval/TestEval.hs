@@ -23,11 +23,12 @@ main = do
         , testLetStatement
         , testFunctionObject
         , testFunctionApplication
+        , testStringLiteral
         ]
     return ()
 
 
-data Ob = ObInt Integer | ObNull | ObErr String| Unexpected String
+data Ob = ObInt Integer | ObStr T.Text | ObNull | ObErr String| Unexpected String
     deriving (Eq, Show)
 
 -- | support
@@ -58,6 +59,7 @@ _evalObject :: T.Text -> Ob
 _evalObject s = case _object s of
         Obj.Null        -> ObNull
         Obj.Integer v   -> ObInt v
+        Obj.String v   -> ObStr v
         Obj.Error   msg -> ObErr msg
         o               -> Unexpected $ show $ Obj.getObjectType o
 
@@ -440,3 +442,12 @@ applyFunc(100, 55, add);
 
     unwrap (Right e) = e
     unwrap (Left e)  = e
+
+-- | testStringLiteral
+--
+testStringLiteral :: Test
+testStringLiteral = TestList
+    [ "string literal 1" ~: _evalObject input1 ~?= ObStr "Hello World"
+    ]
+  where
+    input1 = [r|"Hello World"|]

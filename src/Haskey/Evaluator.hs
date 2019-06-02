@@ -117,6 +117,7 @@ instance Node Ast.Expression where
     eval (Ast.CallExpression _ func args) = join $ liftM2 applyFunction (eval func) (mapM eval args)
     eval (Ast.InfixExpression _ l op r) = join $ liftM2 (evalInfixExpression op) (eval l) (eval r)
     eval (Ast.IfExpression _ cond cons alte) = eval cond >>= (\c -> if isTruthy c then eval cons else evalIfExists alte)
+    eval (Ast.StringLiteral _ s) = pure $ Obj.String s
 
 -- | evalIfExists
 --
