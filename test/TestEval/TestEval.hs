@@ -59,7 +59,7 @@ _evalObject :: T.Text -> Ob
 _evalObject s = case _object s of
         Obj.Null        -> ObNull
         Obj.Integer v   -> ObInt v
-        Obj.String v   -> ObStr v
+        Obj.String v    -> ObStr v
         Obj.Error   msg -> ObErr msg
         o               -> Unexpected $ show $ Obj.getObjectType o
 
