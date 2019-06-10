@@ -50,7 +50,7 @@ data Object = Null
             deriving (Eq, Show)
 
 -- TODO:
--- Evalutor 側で定義して良い気がする
+-- Evaluator 側で定義して良い気がする
 --
 data Environment = Environment {
                      store :: M.Map T.Text Object

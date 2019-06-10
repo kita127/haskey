@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Haskey.Evaluator
     ( eval
-    , runEvalutor
+    , runEvaluator
     , Result(..)
     )
 where
@@ -18,7 +18,7 @@ import           Text.Printf
 
 -----------------------------------------------------------------------------
 
-newtype Evaluator a = Evaluator {runEvalutor :: Obj.Environment -> Result a}
+newtype Evaluator a = Evaluator {runEvaluator :: Obj.Environment -> Result a}
 
 data Result a = Done a Obj.Environment
             | Error Obj.Object Obj.Environment
@@ -27,7 +27,7 @@ data Result a = Done a Obj.Environment
 instance Functor Evaluator where
    -- fmap :: (a -> b) -> f a -> f b
     fmap f evalutor = Evaluator
-        (\env -> case runEvalutor evalutor env of
+        (\env -> case runEvaluator evalutor env of
             (Error obj env') -> Error obj env'
             (Done a env')    -> Done (f a) env'
         )
@@ -37,17 +37,17 @@ instance Applicative Evaluator where
     pure v = Evaluator (\env -> Done v env)
 -- <*> :: f (a -> b) -> f a -> f b
     af <*> ax = Evaluator
-        (\env -> case runEvalutor af env of
+        (\env -> case runEvaluator af env of
             (Error obj env') -> Error obj env'
-            (Done a env')    -> runEvalutor (fmap a ax) env'
+            (Done a env')    -> runEvaluator (fmap a ax) env'
         )
 
 instance Monad Evaluator where
    -- (>>=) :: m a -> (a -> m b) -> m b
     mx >>= f = Evaluator
-        (\env -> case runEvalutor mx env of
+        (\env -> case runEvaluator mx env of
             (Error obj env') -> Error obj env'
-            (Done a env')    -> runEvalutor (f a) env'
+            (Done a env')    -> runEvaluator (f a) env'
         )
 -- return :: a -> m a
 -- return's default implementation is pure

@@ -39,12 +39,12 @@ _program = Prs.parse . Lex.lexicalize
 _evaluator = Evl.eval . _program
 
 _object :: T.Text -> Obj.Object
-_object s = case Evl.runEvalutor (_evaluator s) Obj.newEnvironment of
+_object s = case Evl.runEvaluator (_evaluator s) Obj.newEnvironment of
     (Evl.Done obj _)  -> obj
     (Evl.Error err _) -> err
 
 _environment :: T.Text -> Either Obj.Environment Obj.Environment
-_environment s = case Evl.runEvalutor (_evaluator s) Obj.newEnvironment of
+_environment s = case Evl.runEvaluator (_evaluator s) Obj.newEnvironment of
     (Evl.Done _ e)  -> Right e
     (Evl.Error _ e) -> Left e
 
