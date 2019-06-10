@@ -24,6 +24,7 @@ main = do
         , testFunctionObject
         , testFunctionApplication
         , testStringLiteral
+        , testStringConcatenation
         ]
     return ()
 
@@ -363,6 +364,7 @@ testErrorHandling = TestList
     , "testErrorHandling 6" ~: _evalObject "if (10 > 1) { true + false; }" ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
     , "testErrorHandling 7" ~: _evalObject test7 ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
     , "testErrorHandling 8" ~: _evalObject "foobar" ~?= ObErr "identifier not found: foobar"
+    , "testErrorHandling 9" ~: _evalObject test9 ~?= ObErr "unknown operator: STRING_OBJ - STRING_OBJ"
     ]
   where
     test7 = [r|
@@ -374,6 +376,7 @@ if (10 > 1) {
     return 1;
 }
 |]
+    test9 = [r|"Hello" - "World!"|]
 
 
 -- | testLetStatement
@@ -451,3 +454,12 @@ testStringLiteral = TestList
     ]
   where
     input1 = [r|"Hello World"|]
+
+-- | testStringConcatenation
+--
+testStringConcatenation :: Test
+testStringConcatenation = TestList
+    [ "string literal 1" ~: _evalObject input1 ~?= ObStr "Hello World!"
+    ]
+  where
+    input1 = [r|"Hello" + " " + "World!"|]

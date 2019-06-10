@@ -178,6 +178,7 @@ evalMinusPrefixOperatorExpression o =
 evalInfixExpression :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
 evalInfixExpression op l r
     | objTypeL == Obj.INTEGER && objTypeR == Obj.INTEGER = evalIntegerInfixExpression op l r
+    | objTypeL == Obj.STRING_OBJ && objTypeR == Obj.STRING_OBJ = evalStringInfixExpression op l r
     | objTypeL /= objTypeR = fail $ printf "type mismatch: %s %s %s"
                     (show objTypeL)
                     (T.unpack op)
@@ -210,6 +211,17 @@ evalIntegerInfixExpression op   l r = fail $ printf
     (show objTypeL)
     (T.unpack op)
     (show objTypeR)
+  where
+    objTypeL = Obj.getObjectType l
+    objTypeR = Obj.getObjectType r
+
+-- | evalStringInfixExpression
+--
+--
+evalStringInfixExpression :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
+evalStringInfixExpression "+" l r = return $ Obj.String (Obj.strVal l `T.append` Obj.strVal r)
+evalStringInfixExpression op l r = fail $ printf "unknown operator: %s %s %s"
+                                        (show objTypeL) (T.unpack op) (show objTypeR)
   where
     objTypeL = Obj.getObjectType l
     objTypeR = Obj.getObjectType r
