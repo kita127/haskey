@@ -2,6 +2,7 @@ module Main where
 
 import           Data.Text.IO        as TIO
 import           Haskey.Repl
+import           Haskey.Executor
 import           Options.Applicative
 
 
@@ -36,13 +37,6 @@ parserInfo = info (helper <*> myOpt)
 
 -----------------------------------------------------------------------
 
-hoge :: String -> IO ()
-hoge path = do
-    contents <- TIO.readFile path
-    TIO.putStrLn contents
-    return ()
-
-
 -- | main
 --
 -- TODO:
@@ -53,4 +47,4 @@ main = do
     options <- execParser parserInfo
     if null (args options)
     then start
-    else hoge $ head $ args options
+    else execute $ head $ args options
