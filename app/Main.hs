@@ -13,6 +13,10 @@ newtype Option = Option
     { args :: [String]
     } deriving (Eq, Show)
 
+description :: String
+description =
+    "Haskey is a programming language written in Haskell. If you don't any commands, repl runs."
+
 myOpt :: Parser Option
 myOpt = Option
     <$> argOption
@@ -27,7 +31,7 @@ myOpt = Option
 parserInfo :: ParserInfo Option
 parserInfo = info (helper <*> myOpt)
     $  fullDesc
-    <> progDesc "Haskey is a programming language written in Haskell"
+    <> progDesc description
     <> header "Haskey programming language"
 
 -----------------------------------------------------------------------
