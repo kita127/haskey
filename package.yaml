@@ -33,7 +33,7 @@ library:
   - raw-strings-qq
 
 executables:
-  haskey-exe:
+  haskey:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
