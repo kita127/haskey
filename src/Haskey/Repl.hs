@@ -43,7 +43,7 @@ start = do
               printParseError prg
               loop env
           else do
-              let (obj, env') = (case Evl.runEvalutor (Evl.eval prg) env of
+              let (obj, env') = (case Evl.runEvaluator (Evl.eval prg) env of
                                       (Evl.Done obj env' ) -> (obj, env')
                                       (Evl.Error obj env') -> (obj, env'))
               if obj /= Obj.Void
