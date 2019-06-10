@@ -33,7 +33,7 @@ library:
   - raw-strings-qq
 
 executables:
-  haskey-exe:
+  haskey:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -43,6 +43,8 @@ executables:
     - -Wall
     dependencies:
     - haskey
+    - optparse-applicative
+    - text
 
 # 個別でのテスト指定
 # $ stack test haskey:test:parse-test
