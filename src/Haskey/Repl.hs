@@ -14,7 +14,9 @@ import           Haskey.Parser
 import qualified Haskey.Token      as Tok
 import           Text.RawString.QQ
 
+prompt :: T.Text
 prompt = ">> "
+
 
 -- | start
 --
@@ -28,10 +30,11 @@ prompt = ">> "
 --
 start :: IO ()
 start = do
+    greet
     loop Obj.newEnvironment
     where
       loop env = do
-          putStrLn prompt
+          TIO.putStrLn prompt
           l <- TIO.getLine
           let prg = (parse . lexicalize) l
 
@@ -49,6 +52,9 @@ start = do
               loop env'
 
 
+greet :: IO ()
+greet = TIO.putStrLn greeting
+
 -- | hasError
 --
 hasError :: Ast.Program -> Bool
@@ -63,6 +69,11 @@ printParseError :: Ast.Program -> IO ()
 printParseError prg = do
     TIO.putStrLn chobiFace
     mapM_ (TIO.putStrLn . ("\t" <>) . Ast.string) . Ast.extractFailers $ prg
+
+greeting :: T.Text
+greeting = [r|Hello! This is the Haskey programming language!
+Feel free to type in commands
+Usage: haskey --help|]
 
 chobiFace :: T.Text
 chobiFace = [r|
