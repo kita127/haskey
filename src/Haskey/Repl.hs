@@ -12,10 +12,20 @@ import           Haskey.Lexer
 import           Haskey.Object     as Obj
 import           Haskey.Parser
 import qualified Haskey.Token      as Tok
+import           System.IO
 import           Text.RawString.QQ
 
-prompt :: T.Text
-prompt = ">> "
+-- | prompt
+--
+-- 出力は改行が来るまでバッファリングされるため
+-- hFlush する必要がある
+--
+prompt :: IO ()
+prompt = do
+    putStr ">> "
+    hFlush stdout
+    return ()
+
 
 
 -- | start
@@ -24,17 +34,13 @@ prompt = ">> "
 -- ファイルハンドルは main が任意のものを渡し、start は標準入出力以外にも
 -- 対応できるようにする
 --
--- TODO:
--- '>>' と同じ行に入力がされない。改行されてから入力になってしまう
--- Haskell の IO アクションが関数の戻り値評価時に実行されるからみで起きる減少
---
 start :: IO ()
 start = do
     greet
     loop Obj.newEnvironment
     where
       loop env = do
-          TIO.putStrLn prompt
+          prompt
           l <- TIO.getLine
           let prg = (parse . lexicalize) l
 
