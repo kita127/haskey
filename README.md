@@ -43,7 +43,7 @@ Hello World
 FILE 引数には現在未対応です
 ```
 Usage: haskey [FILE]
-  Haskey is a programming language written in Haskell. If you don't any
+  Haskey is a programming language written in Haskell. If you don't enter any
   commands, repl runs.
 
 Available options:
