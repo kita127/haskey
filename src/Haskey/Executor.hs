@@ -1,6 +1,5 @@
 module Haskey.Executor (execute) where
 
-import           Data.Text.IO as TIO
 
 
 -- | execute
@@ -10,6 +9,5 @@ import           Data.Text.IO as TIO
 --
 execute :: String -> IO ()
 execute path = do
-    contents <- TIO.readFile path
-    TIO.putStrLn contents
+    putStrLn "sorry, FILE is not available"
     return ()
