@@ -1,5 +1,6 @@
 # Haskey
 
+## Description
 haskey is a programming language written in Haskell.
 
 It is a language that originally appeared in the book "Writing An Interpreter In Go".
@@ -14,6 +15,29 @@ Go言語でつくるインタプリタ本と同じ条件とするため以下の
 - Parsec は使わない
     - パーサコンビネータは使わない
     - もちろん Alex、Happy などの字句解析、構文解析系のライブラリも使用しない
+
+## Synopsis
+```
+prompt$ haskey
+Hello! This is the Haskey programming language!
+Feel free to type in commands
+Usage: haskey --help
+>> let a = 100;
+>> let b = 200;
+>> a + b;
+300
+>> if(a > 1000){ true; }else{ false; };
+False
+>> let add = fn(x, y) { x + y };
+>> let sub = fn(x, y) { x - y };
+>> let applyFunc = fn(a, b, func) { func(a, b) };
+>> applyFunc(2, 2, add);
+4
+>> applyFunc(10, 2, sub);
+8
+>> "Hello" + " " + "World";
+Hello World
+```
 
 ## Usage
 FILE 引数には現在未対応です
@@ -122,31 +146,6 @@ love Haskell
 300
 >> threeTime(200);
 600
-```
-
-
-
-## Examples
-```
-prompt$ haskey
-Hello! This is the Haskey programming language!
-Feel free to type in commands
-Usage: haskey --help
->> let a = 100;
->> let b = 200;
->> a + b;
-300
->> if(a > 1000){ true; }else{ false; };
-False
->> let add = fn(x, y) { x + y };
->> let sub = fn(x, y) { x - y };
->> let applyFunc = fn(a, b, func) { func(a, b) };
->> applyFunc(2, 2, add);
-4
->> applyFunc(10, 2, sub);
-8
->> "Hello" + " " + "World";
-Hello World
 ```
 
 
