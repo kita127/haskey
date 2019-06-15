@@ -132,30 +132,20 @@ prompt$ haskey
 Hello! This is the Haskey programming language!
 Feel free to type in commands
 Usage: haskey --help
->> 
-let a = 100;
->> 
-let b = 200;
->> 
-a + b;
+>> let a = 100;
+>> let b = 200;
+>> a + b;
 300
->> 
-if(a > 1000){ true; }else{ false; };
+>> if(a > 1000){ true; }else{ false; };
 False
->> 
-let add = fn(x, y) { x + y };
->> 
-let sub = fn(x, y) { x - y };
->> 
-let applyFunc = fn(a, b, func) { func(a, b) };
->> 
-applyFunc(2, 2, add);
+>> let add = fn(x, y) { x + y };
+>> let sub = fn(x, y) { x - y };
+>> let applyFunc = fn(a, b, func) { func(a, b) };
+>> applyFunc(2, 2, add);
 4
->> 
-applyFunc(10, 2, sub);
+>> applyFunc(10, 2, sub);
 8
->> 
-"Hello" + " " + "World";
+>> "Hello" + " " + "World";
 Hello World
 ```
 
