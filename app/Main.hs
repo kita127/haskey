@@ -16,7 +16,7 @@ newtype Option = Option
 
 description :: String
 description =
-    "Haskey is a programming language written in Haskell. If you don't any commands, repl runs."
+    "Haskey is a programming language written in Haskell. If you don't enter any commands, repl runs."
 
 myOpt :: Parser Option
 myOpt = Option
