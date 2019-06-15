@@ -39,6 +39,23 @@ False
 Hello World
 ```
 
+## Required
+Stack
+
+https://docs.haskellstack.org/en/stable/README/
+
+## Installing
+
+```
+$ git clone https://github.com/kita127/haskey.git
+$ cd ./haskey
+$ stack build
+$ stack install
+```
+
+## UnInstalling
+`stack path --local-bin` で表示されるディレクトリにある haskey を削除してください
+
 ## Usage
 FILE 引数には現在未対応です
 ```
