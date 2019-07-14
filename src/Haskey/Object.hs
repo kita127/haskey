@@ -10,9 +10,9 @@ module Haskey.Object
     )
 where
 
-import qualified Data.Map   as M
-import qualified Data.Text  as T
-import qualified Haskey.Ast as Ast
+import qualified Data.Map                      as M
+import qualified Data.Text                     as T
+import qualified Haskey.Ast                    as Ast
 
 data ObjectType = NULL_OBJ
                 | INTEGER
@@ -73,19 +73,19 @@ newEnclosedEnvironment = Environment
 -- | inspect
 --
 inspect :: Object -> T.Text
-inspect Null              = "null"
-inspect (Integer     v  ) = T.pack . show $ v
-inspect (Boolean     v  ) = T.pack . show $ v
-inspect (ReturnValue v  ) = inspect v
-inspect (String v ) = v
-inspect (Function p b _)  = inspectFunction p b
+inspect Null             = "null"
+inspect (Integer     v ) = T.pack . show $ v
+inspect (Boolean     v ) = T.pack . show $ v
+inspect (ReturnValue v ) = inspect v
+inspect (String      v ) = v
+inspect (Function p b _) = inspectFunction p b
   where
-    inspectFunction param' body'
-        = "fn" <>  "(" <> params param' <> ") {\n" <> Ast.string body' <> "\n}"
+    inspectFunction param' body' =
+        "fn" <> "(" <> params param' <> ") {\n" <> Ast.string body' <> "\n}"
     params = T.intercalate ", " . map Ast.string
 
-inspect Void              = ""
-inspect (Error       msg) = T.pack $ "ERROR: " ++ msg
+inspect Void        = ""
+inspect (Error msg) = T.pack $ "ERROR: " ++ msg
 
 
 -- | getObjectType
@@ -95,7 +95,7 @@ getObjectType Null            = NULL_OBJ
 getObjectType (Integer     _) = INTEGER
 getObjectType (Boolean     _) = BOOLEAN
 getObjectType (ReturnValue _) = RETURN_VALUE_OBJ
-getObjectType String {}       = STRING_OBJ
-getObjectType Function {}     = FUNCTION
+getObjectType String{}        = STRING_OBJ
+getObjectType Function{}      = FUNCTION
 getObjectType Void            = VOID
-getObjectType (Error       _) = ERROR
+getObjectType (Error _)       = ERROR
