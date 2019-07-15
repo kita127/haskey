@@ -483,7 +483,7 @@ sepBy p tokType = someParams <|> return []
   where
     someParams = do
         r <- p
-        (next . next . expectPeek) Tok.Comma
+        (next . next . expectPeek) tokType
             *>  fmap (r :) (sepBy p tokType)
             <|> next (return [r])
 -- | next
