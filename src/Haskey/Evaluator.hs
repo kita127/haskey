@@ -6,11 +6,15 @@ module Haskey.Evaluator
     )
 where
 
-import           Control.Monad (foldM, join, liftM2)
-import qualified Data.Map      as M
-import qualified Data.Text     as T
-import qualified Haskey.Ast    as Ast
-import qualified Haskey.Object as Obj
+import           Control.Applicative
+import           Control.Monad                  ( foldM
+                                                , join
+                                                , liftM2
+                                                )
+import qualified Data.Map                      as M
+import qualified Data.Text                     as T
+import qualified Haskey.Ast                    as Ast
+import qualified Haskey.Object                 as Obj
 import           Text.Printf
 
 
@@ -29,7 +33,7 @@ instance Functor Evaluator where
     fmap f evalutor = Evaluator
         (\env -> case runEvaluator evalutor env of
             (Error obj env') -> Error obj env'
-            (Done a env')    -> Done (f a) env'
+            (Done  a   env') -> Done (f a) env'
         )
 
 instance Applicative Evaluator where
@@ -39,7 +43,7 @@ instance Applicative Evaluator where
     af <*> ax = Evaluator
         (\env -> case runEvaluator af env of
             (Error obj env') -> Error obj env'
-            (Done a env')    -> runEvaluator (fmap a ax) env'
+            (Done  a   env') -> runEvaluator (fmap a ax) env'
         )
 
 instance Monad Evaluator where
@@ -47,7 +51,7 @@ instance Monad Evaluator where
     mx >>= f = Evaluator
         (\env -> case runEvaluator mx env of
             (Error obj env') -> Error obj env'
-            (Done a env')    -> runEvaluator (f a) env'
+            (Done  a   env') -> runEvaluator (f a) env'
         )
 -- return :: a -> m a
 -- return's default implementation is pure
@@ -56,27 +60,51 @@ instance Monad Evaluator where
     fail s = Evaluator (\env -> Error (Obj.Error s) env)
 
 
+instance Alternative Evaluator where
+  -- many :: f a -> f [a]
+  -- | (<|>)
+    ea <|> eb = Evaluator
+        (\env -> case runEvaluator ea env of
+            r@(Done  _ _) -> r
+            (  Error _ _) -> runEvaluator eb env
+        )
+
 -- | set
 --
 set :: T.Text -> Obj.Object -> Evaluator Obj.Object
 set key value = Evaluator (\env -> Done value (newEnv key value env))
-    where newEnv k v e = Obj.Environment (M.insert k v (Obj.store e)) (Obj.outer e)
+  where
+    newEnv k v e = Obj.Environment (M.insert k v (Obj.store e)) (Obj.outer e)
 
 -- | get
 --
 get :: T.Text -> Evaluator Obj.Object
-get key = Evaluator (\env -> case lookupIdent env key of
-            (Just obj) -> Done obj env
-            Nothing -> Error (Obj.Error (printf "identifier not found: %s" (T.unpack key))) env)
+get key = Evaluator
+    (\env -> case lookupIdent env key of
+        (Just obj) -> Done obj env
+        Nothing    -> Error
+            (Obj.Error (printf "identifier not found: %s" (T.unpack key)))
+            env
+    )
 
+-- | getBuiltins
+--
+getBuiltins :: T.Text -> Evaluator Obj.Object
+getBuiltins key = Evaluator
+    (\env -> case M.lookup key builtins of
+        (Just obj) -> Done obj env
+        Nothing    -> Error
+            (Obj.Error (printf "identifier not found: %s" (T.unpack key)))
+            env
+    )
 
 -- | lookupIdent
 --
 lookupIdent :: Obj.Environment -> T.Text -> Maybe Obj.Object
-lookupIdent Obj.NothingEnv _ = Nothing
-lookupIdent env key = case M.lookup key (Obj.store env) of
-        (Just obj) -> Just obj
-        Nothing    -> lookupIdent (Obj.outer env) key
+lookupIdent Obj.NothingEnv _   = Nothing
+lookupIdent env            key = case M.lookup key (Obj.store env) of
+    (Just obj) -> Just obj
+    Nothing    -> lookupIdent (Obj.outer env) key
 
 -- | getEnv
 --
@@ -89,6 +117,27 @@ modifyEnv :: Obj.Environment -> Evaluator ()
 modifyEnv newEnv = Evaluator (\_ -> Done () newEnv)
 
 -----------------------------------------------------------------------------
+
+-- | builtins
+--
+builtins :: M.Map T.Text Obj.Object
+builtins = M.fromList [("len", Obj.Builtin bLen)]
+
+-- | bLen
+--
+bLen :: Obj.BuiltinFunction
+bLen = Obj.BuiltinFunction f
+  where
+    f [arg] = if Obj.getObjectType arg == Obj.STRING_OBJ
+        then Obj.Integer $ toInteger $ T.length $ Obj.strVal arg
+        else
+            Obj.Error
+            $ printf "argument to `len` not supported, got %s"
+            $ show
+            $ Obj.getObjectType arg
+    f args =
+        Obj.Error $ printf "wrong number of arguments. got=%d, want=1" $ length
+            args
 
 -- | null'
 null' :: Obj.Object
@@ -106,17 +155,24 @@ instance Node Ast.Statement where
     eval (Ast.ExpressionStatement _ e    ) = eval e
     eval (Ast.BlockStatement      _ stmts) = evalBlockStatement stmts
     eval (Ast.ReturnStatement     _ e    ) = Obj.ReturnValue <$> eval e
-    eval (Ast.LetStatement _ name v      ) = eval v >>= set (Ast.expValue name) >> return Obj.Void
+    eval (Ast.LetStatement _ name v) =
+        eval v >>= set (Ast.expValue name) >> return Obj.Void
 
 instance Node Ast.Expression where
     eval (Ast.Identifire     _ v) = evalIdentifire v
     eval (Ast.IntegerLiteral _ v) = pure $ Obj.Integer v
-    eval (Ast.Boolean _ v) = pure (if v then Obj.Boolean True else Obj.Boolean False)
-    eval (Ast.PrefixExpression _ op r ) = eval r >>= evalPrefixExpression op
-    eval (Ast.FunctionLiteral _ params' body') = Obj.Function params' body' <$> getEnv
-    eval (Ast.CallExpression _ func args) = join $ liftM2 applyFunction (eval func) (mapM eval args)
-    eval (Ast.InfixExpression _ l op r) = join $ liftM2 (evalInfixExpression op) (eval l) (eval r)
-    eval (Ast.IfExpression _ cond cons alte) = eval cond >>= (\c -> if isTruthy c then eval cons else evalIfExists alte)
+    eval (Ast.Boolean _ v) =
+        pure (if v then Obj.Boolean True else Obj.Boolean False)
+    eval (Ast.PrefixExpression _ op r) = eval r >>= evalPrefixExpression op
+    eval (Ast.FunctionLiteral _ params' body') =
+        Obj.Function params' body' <$> getEnv
+    eval (Ast.CallExpression _ func args) =
+        join $ liftM2 applyFunction (eval func) (mapM eval args)
+    eval (Ast.InfixExpression _ l op r) =
+        join $ liftM2 (evalInfixExpression op) (eval l) (eval r)
+    eval (Ast.IfExpression _ cond cons alte) =
+        eval cond
+            >>= (\c -> if isTruthy c then eval cons else evalIfExists alte)
     eval (Ast.StringLiteral _ s) = pure $ Obj.String s
 
 -- | evalIfExists
@@ -130,13 +186,14 @@ evalIfExists alte             = eval alte
 --
 givePriorityReturn :: Obj.Object -> Ast.Statement -> Evaluator Obj.Object
 givePriorityReturn r@(Obj.ReturnValue _) _ = pure r
-givePriorityReturn _ s                     = eval s
+givePriorityReturn _                     s = eval s
 
 
 -- | evalProgram
 --
 evalProgram :: [Ast.Statement] -> Evaluator Obj.Object
-evalProgram stmts = unwrapReturnValue <$> foldM givePriorityReturn Obj.Void stmts
+evalProgram stmts =
+    unwrapReturnValue <$> foldM givePriorityReturn Obj.Void stmts
 
 -- | evalBlockStatement
 --
@@ -146,7 +203,7 @@ evalBlockStatement = foldM givePriorityReturn Obj.Void
 -- | evalIdentifire
 --
 evalIdentifire :: T.Text -> Evaluator Obj.Object
-evalIdentifire name = get name
+evalIdentifire name = get name <|> getBuiltins name
 
 -- | evalPrefixExpression
 --
@@ -175,17 +232,24 @@ evalMinusPrefixOperatorExpression o =
 
 -- | evalInfixExpression
 --
-evalInfixExpression :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
+evalInfixExpression
+    :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
 evalInfixExpression op l r
-    | objTypeL == Obj.INTEGER && objTypeR == Obj.INTEGER = evalIntegerInfixExpression op l r
-    | objTypeL == Obj.STRING_OBJ && objTypeR == Obj.STRING_OBJ = evalStringInfixExpression op l r
-    | objTypeL /= objTypeR = fail $ printf "type mismatch: %s %s %s"
+    | objTypeL == Obj.INTEGER && objTypeR == Obj.INTEGER
+    = evalIntegerInfixExpression op l r
+    | objTypeL == Obj.STRING_OBJ && objTypeR == Obj.STRING_OBJ
+    = evalStringInfixExpression op l r
+    | objTypeL /= objTypeR
+    = fail $ printf "type mismatch: %s %s %s"
                     (show objTypeL)
                     (T.unpack op)
                     (show objTypeR)
-    | op == "==" = pure $ Obj.Boolean $ l == r
-    | op == "!=" = pure $ Obj.Boolean $ l /= r
-    | otherwise = fail $ printf "unknown operator: %s %s %s"
+    | op == "=="
+    = pure $ Obj.Boolean $ l == r
+    | op == "!="
+    = pure $ Obj.Boolean $ l /= r
+    | otherwise
+    = fail $ printf "unknown operator: %s %s %s"
                     (show objTypeL)
                     (T.unpack op)
                     (show objTypeR)
@@ -198,12 +262,18 @@ evalInfixExpression op l r
 --
 evalIntegerInfixExpression
     :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
-evalIntegerInfixExpression "+" l r = pure $ Obj.Integer $ Obj.intVal l + Obj.intVal r
-evalIntegerInfixExpression "-" l r = pure $ Obj.Integer $ Obj.intVal l - Obj.intVal r
-evalIntegerInfixExpression "*" l r = pure $ Obj.Integer $ Obj.intVal l * Obj.intVal r
-evalIntegerInfixExpression "/" l r = pure $ Obj.Integer $ Obj.intVal l `div` Obj.intVal r
-evalIntegerInfixExpression "<" l r = pure $ Obj.Boolean $ Obj.intVal l < Obj.intVal r
-evalIntegerInfixExpression ">" l r = pure $ Obj.Boolean $ Obj.intVal l > Obj.intVal r
+evalIntegerInfixExpression "+" l r =
+    pure $ Obj.Integer $ Obj.intVal l + Obj.intVal r
+evalIntegerInfixExpression "-" l r =
+    pure $ Obj.Integer $ Obj.intVal l - Obj.intVal r
+evalIntegerInfixExpression "*" l r =
+    pure $ Obj.Integer $ Obj.intVal l * Obj.intVal r
+evalIntegerInfixExpression "/" l r =
+    pure $ Obj.Integer $ Obj.intVal l `div` Obj.intVal r
+evalIntegerInfixExpression "<" l r =
+    pure $ Obj.Boolean $ Obj.intVal l < Obj.intVal r
+evalIntegerInfixExpression ">" l r =
+    pure $ Obj.Boolean $ Obj.intVal l > Obj.intVal r
 evalIntegerInfixExpression "==" l r = pure $ Obj.Boolean $ l == r
 evalIntegerInfixExpression "!=" l r = pure $ Obj.Boolean $ l /= r
 evalIntegerInfixExpression op   l r = fail $ printf
@@ -218,10 +288,15 @@ evalIntegerInfixExpression op   l r = fail $ printf
 -- | evalStringInfixExpression
 --
 --
-evalStringInfixExpression :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
-evalStringInfixExpression "+" l r = return $ Obj.String (Obj.strVal l `T.append` Obj.strVal r)
-evalStringInfixExpression op l r = fail $ printf "unknown operator: %s %s %s"
-                                        (show objTypeL) (T.unpack op) (show objTypeR)
+evalStringInfixExpression
+    :: T.Text -> Obj.Object -> Obj.Object -> Evaluator Obj.Object
+evalStringInfixExpression "+" l r =
+    return $ Obj.String (Obj.strVal l `T.append` Obj.strVal r)
+evalStringInfixExpression op l r = fail $ printf
+    "unknown operator: %s %s %s"
+    (show objTypeL)
+    (T.unpack op)
+    (show objTypeR)
   where
     objTypeL = Obj.getObjectType l
     objTypeR = Obj.getObjectType r
@@ -230,13 +305,27 @@ evalStringInfixExpression op l r = fail $ printf "unknown operator: %s %s %s"
 -- | applyFunction
 --
 applyFunction :: Obj.Object -> [Obj.Object] -> Evaluator Obj.Object
-applyFunction function args = do
+applyFunction function args =
+    userFunction function args <|> builtinFunction function args
+
+-- | userFunction
+--
+userFunction :: Obj.Object -> [Obj.Object] -> Evaluator Obj.Object
+userFunction function args = do
     expectObj Obj.FUNCTION function
-    let params = M.fromList $ zip (map Ast.expValue . Obj.parameters $ function) args
+    let params =
+            M.fromList $ zip (map Ast.expValue . Obj.parameters $ function) args
         extendEnv = Obj.newEnclosedEnvironment params (Obj.env function)
     evaluated <- evalInExtendEnv (Obj.body function) extendEnv
     return $ unwrapReturnValue evaluated
 
+-- | builtinFunction
+--
+builtinFunction :: Obj.Object -> [Obj.Object] -> Evaluator Obj.Object
+builtinFunction function args = do
+    expectObj Obj.BUILTIN_OBJ function
+    let f = Obj.fn function
+    return $ Obj.runBFunc f args
 
 -- | evalInExtendEnv
 --
@@ -255,8 +344,8 @@ expectObj :: Obj.ObjectType -> Obj.Object -> Evaluator ()
 expectObj expected obj = do
     let objType = Obj.getObjectType obj
     if objType == expected
-    then return ()
-    else fail $ printf "not a function: %s" (show objType)
+        then return ()
+        else fail $ printf "not a function: %s" (show objType)
 
 -- | unwrapReturnValue
 --

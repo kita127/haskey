@@ -7,6 +7,7 @@ module Haskey.Object
     , getObjectType
     , newEnvironment
     , newEnclosedEnvironment
+    , BuiltinFunction(..)
     )
 where
 
@@ -20,9 +21,18 @@ data ObjectType = NULL_OBJ
                 | RETURN_VALUE_OBJ
                 | STRING_OBJ
                 | FUNCTION
+                | BUILTIN_OBJ
                 | VOID
                 | ERROR
     deriving (Eq, Show)
+
+newtype BuiltinFunction = BuiltinFunction {runBFunc :: [Object] -> Object}
+
+instance Eq BuiltinFunction where
+    _ == _ = False
+
+instance Show BuiltinFunction where
+    show _ = "builtin function"
 
 
 data Object = Null
@@ -42,6 +52,9 @@ data Object = Null
                 parameters :: [Ast.Expression]      -- Identifire
               , body       :: Ast.Statement         -- BlockStatement
               , env        :: Environment
+              }
+            | Builtin {
+                fn :: BuiltinFunction
               }
             | Void      -- 返り値を返さないオブジェクト let 文など
             | Error {
@@ -74,10 +87,11 @@ newEnclosedEnvironment = Environment
 --
 inspect :: Object -> T.Text
 inspect Null             = "null"
-inspect (Integer     v ) = T.pack . show $ v
-inspect (Boolean     v ) = T.pack . show $ v
-inspect (ReturnValue v ) = inspect v
-inspect (String      v ) = v
+inspect (Integer     v)  = T.pack . show $ v
+inspect (Boolean     v)  = T.pack . show $ v
+inspect (ReturnValue v)  = inspect v
+inspect (String      v)  = v
+inspect Builtin{}        = "builtin function"
 inspect (Function p b _) = inspectFunction p b
   where
     inspectFunction param' body' =
@@ -97,5 +111,6 @@ getObjectType (Boolean     _) = BOOLEAN
 getObjectType (ReturnValue _) = RETURN_VALUE_OBJ
 getObjectType String{}        = STRING_OBJ
 getObjectType Function{}      = FUNCTION
+getObjectType Builtin{}       = BUILTIN_OBJ
 getObjectType Void            = VOID
 getObjectType (Error _)       = ERROR

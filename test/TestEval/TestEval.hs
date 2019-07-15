@@ -25,6 +25,7 @@ main = do
         , testFunctionApplication
         , testStringLiteral
         , testStringConcatenation
+        , testBuiltinFunctions
         ]
     return ()
 
@@ -463,3 +464,22 @@ testStringConcatenation = TestList
     ]
   where
     input1 = [r|"Hello" + " " + "World!"|]
+
+
+-- | testBuiltinFunctions
+--
+testBuiltinFunctions :: Test
+testBuiltinFunctions = TestList
+    [ "len 0 letter word" ~: _evalObject input1 ~?= ObInt 0
+    , "len 4 letter word" ~: _evalObject input2 ~?= ObInt 4
+    , "len hello world" ~: _evalObject input3 ~?= ObInt 11
+    , "len number" ~: _evalObject input4 ~?= ObErr "argument to `len` not supported, got INTEGER"
+    , "len two arguments" ~: _evalObject input5 ~?= ObErr "wrong number of arguments. got=2, want=1"
+    ]
+  where
+    input1 = [r|len("")|]
+    input2 = [r|len("four")|]
+    input3 = [r|len("hello world")|]
+    input4 = [r|len(1)|]
+    input5 = [r|len("one", "two")|]
+
