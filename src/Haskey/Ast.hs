@@ -11,8 +11,8 @@ module Haskey.Ast
     )
 where
 
-import qualified Data.Text    as T
-import qualified Haskey.Token as Tok
+import qualified Data.Text                     as T
+import qualified Haskey.Token                  as Tok
 
 -- | class Stringer
 --
