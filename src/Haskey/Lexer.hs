@@ -4,10 +4,10 @@ module Haskey.Lexer
     )
 where
 
-import qualified Data.Char    as C
-import           Data.Maybe   (fromJust)
-import qualified Data.Text    as T
-import           Haskey.Token as Tok
+import qualified Data.Char                     as C
+import           Data.Maybe                     ( fromJust )
+import qualified Data.Text                     as T
+import           Haskey.Token                  as Tok
 
 
 -- | lexicalize
@@ -80,9 +80,9 @@ readNumber s = (tok, remain)
 readString :: T.Text -> (Tok.Token, T.Text)
 readString s = (tok, remain)
   where
-    tok = Tok.Token Tok.STRING lit
+    tok    = Tok.Token Tok.STRING lit
     remain = T.tail . T.dropWhile (/= '"') . T.tail $ s
-    lit = T.takeWhile (/= '"') . T.tail $ s
+    lit    = T.takeWhile (/= '"') . T.tail $ s
 
 -- | readFix
 --
