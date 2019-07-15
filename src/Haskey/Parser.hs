@@ -475,9 +475,6 @@ takeWhileToken target = do
 
 -- | sepBy
 --
--- TODO:
--- 区切りしであるはずの tokType が生きていない
---
 sepBy :: Parser a -> Tok.TokenType -> Parser [a]
 sepBy p tokType = someParams <|> return []
   where
