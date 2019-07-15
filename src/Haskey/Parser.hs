@@ -125,7 +125,7 @@ precedences = M.fromList
     , (Tok.Slash   , Product)
     , (Tok.Asterisk, Product)
     , (Tok.Lparen  , Call)
-    , (Tok.Lbracket  , Index)
+    , (Tok.Lbracket, Index)
     ]
 
 -- | prefixParseFns
@@ -158,7 +158,7 @@ infixParseFns = M.fromList
     , (Tok.Lt      , parseInfixExpression)
     , (Tok.Gt      , parseInfixExpression)
     , (Tok.Lparen  , parseCallExpression)
-    , (Tok.Lbracket  , parseIndexExpression)
+    , (Tok.Lbracket, parseIndexExpression)
     ]
 
 
@@ -380,7 +380,11 @@ parseArrayLiteral =
 --
 parseIndexExpression :: Ast.Expression -> Parser Ast.Expression
 parseIndexExpression left =
-    Ast.IndexExpression <$> nextToken <*> pure left <*> parseExpression Lowest <* next (expectPeek Tok.Rbracket)
+    Ast.IndexExpression
+        <$> nextToken
+        <*> pure left
+        <*> parseExpression Lowest
+        <*  next (expectPeek Tok.Rbracket)
 
 -- | parseFn
 --
