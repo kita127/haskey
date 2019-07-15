@@ -28,6 +28,7 @@ main = do
       , testReturnStatements
       , testStringLiteral
       , testParsingArrayLiteral
+      , testParsingIndexExpressions
 
       , testInvalid
       ]
@@ -387,6 +388,11 @@ testOperatorPrecedenceParsing = TestList
 
   , "testOperatorPrecedenceParsing call function 2" ~:
         testHelper "add(a + b + c * d / f + g)" ~?= "add((((a + b) + ((c * d) / f)) + g))"
+
+  , "testOperatorPrecedenceParsing index 1" ~:
+        testHelper "a * [1, 2, 3, 4][b * c] * d" ~?= "((a * ([1, 2, 3, 4][(b * c)])) * d)"
+  , "testOperatorPrecedenceParsing index 2" ~:
+        testHelper "add(a * b[2], b[1], 2 * [1, 2][1])" ~?= "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"
   ]
   where
     testHelper = Ast.string . Ps.parse . Lx.lexicalize
@@ -670,6 +676,22 @@ testParsingArrayLiteral = TestList
     _test i (Ast.ArrayLiteral _ els) = Right $ testExpContents $ els !! i
     _test _ x                       = Left $ Ast.string x
 
+
+-- | testParsingIndexExpressions
+--
+testParsingIndexExpressions :: Test
+testParsingIndexExpressions = TestList
+  [ "testParsingIndexExpressions 1 left" ~: _testLeft (fetchFirstExpression input1)  ~?=
+        Right [ExpIdent "myArray"]
+  , "testParsingIndexExpressions 1 index" ~: _testIndex (fetchFirstExpression input1)  ~?=
+        Right [ExpInt 1, ExpOp "+", ExpInt 1]
+  ]
+  where
+    input1 = "myArray[1 + 1]"
+    _testLeft (Ast.IndexExpression _ l _) = Right $ testExpContents l
+    _testLeft x = Left $ Ast.string x
+    _testIndex a@(Ast.IndexExpression _ _ i) = Right $ testExpContents i
+    _testIndex x = Left $ Ast.string x
 
 -- | testInvalid
 --

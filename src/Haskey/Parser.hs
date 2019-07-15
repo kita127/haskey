@@ -109,6 +109,7 @@ data Precedence = Lowest
                 | Product           -- *
                 | Prefix            -- -X or !X
                 | Call              -- myFunction(X)
+                | Index             -- array[index]
                 deriving (Eq, Show, Ord)
 
 -- | precedences
@@ -124,6 +125,7 @@ precedences = M.fromList
     , (Tok.Slash   , Product)
     , (Tok.Asterisk, Product)
     , (Tok.Lparen  , Call)
+    , (Tok.Lbracket  , Index)
     ]
 
 -- | prefixParseFns
@@ -156,6 +158,7 @@ infixParseFns = M.fromList
     , (Tok.Lt      , parseInfixExpression)
     , (Tok.Gt      , parseInfixExpression)
     , (Tok.Lparen  , parseCallExpression)
+    , (Tok.Lbracket  , parseIndexExpression)
     ]
 
 
@@ -372,6 +375,12 @@ parseStringLiteral =
 parseArrayLiteral :: Parser Ast.Expression
 parseArrayLiteral =
     Ast.ArrayLiteral <$> nextToken <*> sepBy (parseExpression Lowest) Tok.Comma
+
+-- | parseIndexExpression
+--
+parseIndexExpression :: Ast.Expression -> Parser Ast.Expression
+parseIndexExpression left =
+    Ast.IndexExpression <$> nextToken <*> pure left <*> parseExpression Lowest <* next (expectPeek Tok.Rbracket)
 
 -- | parseFn
 --
