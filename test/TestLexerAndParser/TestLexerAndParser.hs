@@ -27,6 +27,7 @@ main = do
       , testLetStatements
       , testReturnStatements
       , testStringLiteral
+      , testParsingArrayLiteral
 
       , testInvalid
       ]
@@ -650,6 +651,24 @@ testStringLiteral = TestList
         (Ast.ExpressionStatement _ expr) -> Right expr
         stms                             -> Left $ Ast.string stms
 
+
+-- | testParsingArrayLiteral
+--
+testParsingArrayLiteral :: Test
+testParsingArrayLiteral = TestList
+  [ "testParsingArrayLiteral 1" ~: _test 0 (fetchFirstExpression input1)  ~?=
+        Right [ExpInt 1]
+
+  , "testParsingArrayLiteral 2" ~: _test 1 (fetchFirstExpression input1)  ~?=
+        Right [ExpInt 2, ExpOp "*", ExpInt 2]
+
+  , "testParsingArrayLiteral 3" ~: _test 2 (fetchFirstExpression input1)  ~?=
+        Right [ExpInt 3, ExpOp "+", ExpInt 3]
+  ]
+  where
+    input1 = "[1, 2 * 2, 3 + 3]"
+    _test i (Ast.ArrayLiteral _ els) = Right $ testExpContents $ els !! i
+    _test _ x                       = Left $ Ast.string x
 
 
 -- | testInvalid

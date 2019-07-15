@@ -140,6 +140,7 @@ prefixParseFns = M.fromList
     , (Tok.Function, parseFunctionLiteral)
     , (Tok.Lparen  , parseGroupedExpression)
     , (Tok.STRING  , parseStringLiteral)
+    , (Tok.Lbracket, parseArrayLiteral)
     ]
 
 -- | infixParseFns
@@ -363,10 +364,14 @@ parseGroupedExpression = do
 --
 parseStringLiteral :: Parser Ast.Expression
 parseStringLiteral =
-    Ast.StringLiteral
-        <$> curToken
-        <*> (Tok.literal <$> curToken)
+    Ast.StringLiteral <$> curToken <*> (Tok.literal <$> curToken)
 
+
+-- | parseArrayLiteral
+--
+parseArrayLiteral :: Parser Ast.Expression
+parseArrayLiteral =
+    Ast.ArrayLiteral <$> nextToken <*> sepBy (parseExpression Lowest) Tok.Comma
 
 -- | parseFn
 --
@@ -469,6 +474,9 @@ takeWhileToken target = do
         else nextToken >> takeWhileToken target
 
 -- | sepBy
+--
+-- TODO:
+-- 区切りしであるはずの tokType が生きていない
 --
 sepBy :: Parser a -> Tok.TokenType -> Parser [a]
 sepBy p tokType = someParams <|> return []

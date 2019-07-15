@@ -110,6 +110,10 @@ data Expression = Identifire {
                     expToken  :: Tok.Token
                   , expValue  :: T.Text
                   }
+                | ArrayLiteral {
+                    expToken  :: Tok.Token
+                  , elements  :: [Expression]
+                  }
                 deriving (Eq, Show)
 
 instance Stringer Expression where
@@ -126,6 +130,8 @@ instance Stringer Expression where
     string (CallExpression _ f as) =
         string f <> "(" <> T.intercalate ", " (map string as) <> ")"
     string (StringLiteral _ s) = s
+    string (ArrayLiteral _ els) =
+        "[" <> T.intercalate ", " (map string els) <> "]"
 
 
 -- | elseStr
