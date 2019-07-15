@@ -7,7 +7,7 @@ module Haskey.Token
     )
 where
 
-import qualified Data.Text as T
+import qualified Data.Text                     as T
 
 data Token = Token
              { tokenType :: TokenType
