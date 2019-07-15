@@ -186,11 +186,28 @@ testLexer = TestList
         -- EOF
         , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
         ]
+
+  , "testLexer test 6 array" ~:
+        Lx.lexicalize testLexerInput6 ~?= [
+          Tok.Token { Tok.tokenType = Tok.Lbracket , Tok.literal = "[" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "1" }
+        , Tok.Token { Tok.tokenType = Tok.Comma , Tok.literal = "," }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "2" }
+        , Tok.Token { Tok.tokenType = Tok.Rbracket , Tok.literal = "]" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
+
+        -- EOF
+        , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
+        ]
+
   ]
   where
     testLexerInput5 = [r|
 "foobar"
 "foo bar"
+|]
+    testLexerInput6 = [r|
+[1, 2];
 |]
 
 -- | parser
@@ -627,11 +644,11 @@ testStringLiteral = TestList
     input1 = [r|"hello world";|]
 
     _test (Ast.StringLiteral _ s) = Right s
-    _test x = Left $ Ast.string x
+    _test x                       = Left $ Ast.string x
 
     extractExpression input = case (head . _statements) input of
         (Ast.ExpressionStatement _ expr) -> Right expr
-        stms -> Left $ Ast.string stms
+        stms                             -> Left $ Ast.string stms
 
 
 

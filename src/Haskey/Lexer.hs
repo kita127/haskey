@@ -39,6 +39,8 @@ nextToken s | T.null s            = (eof, "")
             | ch == ','           = (newToken Tok.Comma ch, remain)
             | ch == '{'           = (newToken Tok.Lbrace ch, remain)
             | ch == '}'           = (newToken Tok.Rbrace ch, remain)
+            | ch == '['           = (newToken Tok.Lbracket ch, remain)
+            | ch == ']'           = (newToken Tok.Rbracket ch, remain)
             | ch == '"'           = readString s
             | isLetter ch         = readIdentifire s
             | C.isDigit ch        = readNumber s

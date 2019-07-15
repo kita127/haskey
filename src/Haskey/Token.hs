@@ -46,6 +46,8 @@ data TokenType = Illegal
                | Rparen         -- ")"
                | Lbrace         -- "{"
                | Rbrace         -- "}"
+               | Lbracket       -- "["
+               | Rbracket       -- "]"
 
                -- キーワード
                | Function       -- "fn"
