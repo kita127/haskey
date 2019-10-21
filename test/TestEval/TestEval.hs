@@ -26,11 +26,12 @@ main = do
         , testStringLiteral
         , testStringConcatenation
         , testBuiltinFunctions
+        , testArrayLiterals
         ]
     return ()
 
 
-data Ob = ObInt Integer | ObStr T.Text | ObNull | ObErr String| Unexpected String
+data Ob = ObInt Integer | ObStr T.Text | ObNull | ObArray [Ob] | ObErr String| Unexpected String
     deriving (Eq, Show)
 
 -- | support
@@ -58,12 +59,15 @@ _intValue = Obj.intVal . _object
 
 
 _evalObject :: T.Text -> Ob
-_evalObject s = case _object s of
-        Obj.Null        -> ObNull
-        Obj.Integer v   -> ObInt v
-        Obj.String v    -> ObStr v
-        Obj.Error   msg -> ObErr msg
-        o               -> Unexpected $ show $ Obj.getObjectType o
+_evalObject = convOb . _object
+
+convOb :: Obj.Object -> Ob
+convOb       Obj.Null          = ObNull
+convOb       (Obj.Integer v)   = ObInt v
+convOb       (Obj.String v)    = ObStr v
+convOb       (Obj.Array es)    = ObArray (map convOb es)
+convOb       (Obj.Error   msg) = ObErr msg
+convOb       o                 = Unexpected $ show $ Obj.getObjectType o
 
 -- | testEvalIntegerExpression
 --
@@ -483,3 +487,11 @@ testBuiltinFunctions = TestList
     input4 = [r|len(1)|]
     input5 = [r|len("one", "two")|]
 
+-- | testArrayLiterals
+--
+testArrayLiterals :: Test
+testArrayLiterals = TestList
+    [ "test array literals 1" ~: _evalObject input1 ~?= ObArray [ObInt 1, ObInt 4, ObInt 6]
+    ]
+  where
+    input1 = "[1, 2 * 2, 3 + 3]"

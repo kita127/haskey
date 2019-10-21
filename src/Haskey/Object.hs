@@ -22,6 +22,7 @@ data ObjectType = NULL_OBJ
                 | STRING_OBJ
                 | FUNCTION
                 | BUILTIN_OBJ
+                | ARRAY_OBJ
                 | VOID
                 | ERROR
     deriving (Eq, Show)
@@ -55,6 +56,9 @@ data Object = Null
               }
             | Builtin {
                 fn :: BuiltinFunction
+              }
+            | Array {
+                elements :: [Object]
               }
             | Void      -- 返り値を返さないオブジェクト let 文など
             | Error {
@@ -92,6 +96,7 @@ inspect (Boolean     v)  = T.pack . show $ v
 inspect (ReturnValue v)  = inspect v
 inspect (String      v)  = v
 inspect Builtin{}        = "builtin function"
+inspect (Array es      ) = "[" <> T.intercalate ", " (map inspect es) <> "]"
 inspect (Function p b _) = inspectFunction p b
   where
     inspectFunction param' body' =
@@ -112,5 +117,6 @@ getObjectType (ReturnValue _) = RETURN_VALUE_OBJ
 getObjectType String{}        = STRING_OBJ
 getObjectType Function{}      = FUNCTION
 getObjectType Builtin{}       = BUILTIN_OBJ
+getObjectType Array{}         = ARRAY_OBJ
 getObjectType Void            = VOID
 getObjectType (Error _)       = ERROR

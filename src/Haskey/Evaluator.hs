@@ -152,7 +152,8 @@ instance Node Ast.Expression where
     eval (Ast.IfExpression _ cond cons alte) =
         eval cond
             >>= (\c -> if isTruthy c then eval cons else evalIfExists alte)
-    eval (Ast.StringLiteral _ s) = pure $ Obj.String s
+    eval (Ast.StringLiteral _ s ) = pure $ Obj.String s
+    eval (Ast.ArrayLiteral  _ es) = Obj.Array <$> mapM eval es
 
 -- | evalIfExists
 --
