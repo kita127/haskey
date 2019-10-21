@@ -480,6 +480,12 @@ testBuiltinFunctions = TestList
     , "len hello world" ~: _evalObject input3 ~?= ObInt 11
     , "len number" ~: _evalObject input4 ~?= ObErr "argument to `len` not supported, got INTEGER"
     , "len two arguments" ~: _evalObject input5 ~?= ObErr "wrong number of arguments. got=2, want=1"
+    , "len 3 array literal" ~: _evalObject input6 ~?= ObInt 3
+    , "len 3 array identifire" ~: _evalObject input7 ~?= ObInt 5
+    , "first 1" ~: _evalObject input8 ~?= ObStr "hoge"
+    , "first 2" ~: _evalObject input9 ~?= ObInt 100
+    , "first string" ~: _evalObject input10 ~?= ObErr "argument to `first` must be ARRAY, got STRING_OBJ"
+    , "first no elements" ~: _evalObject input11 ~?= ObNull
     ]
   where
     input1 = [r|len("")|]
@@ -487,6 +493,12 @@ testBuiltinFunctions = TestList
     input3 = [r|len("hello world")|]
     input4 = [r|len(1)|]
     input5 = [r|len("one", "two")|]
+    input6 = [r|len([1, 2, 3])|]
+    input7 = [r|let myArray = [1, 2, 3, 4, 5];len(myArray);|]
+    input8 = [r|first(["hoge", 3, "fuga"])|]
+    input9 = [r|first([100])|]
+    input10 = [r|first("abcde")|]
+    input11 = [r|first([])|]
 
 -- | testArrayLiterals
 --
