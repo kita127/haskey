@@ -154,6 +154,8 @@ instance Node Ast.Expression where
             >>= (\c -> if isTruthy c then eval cons else evalIfExists alte)
     eval (Ast.StringLiteral _ s ) = pure $ Obj.String s
     eval (Ast.ArrayLiteral  _ es) = Obj.Array <$> mapM eval es
+    eval (Ast.IndexExpression _ left index) =
+        join $ liftM2 evalIndexExpression (eval left) (eval index)
 
 -- | evalIfExists
 --
@@ -280,6 +282,22 @@ evalStringInfixExpression op l r = fail $ printf
   where
     objTypeL = Obj.getObjectType l
     objTypeR = Obj.getObjectType r
+
+
+-- | evalIndexExpression
+--
+evalIndexExpression :: Obj.Object -> Obj.Object -> Evaluator Obj.Object
+evalIndexExpression left index
+    | objTypeL /= Obj.ARRAY_OBJ || objTypeI /= Obj.INTEGER = fail
+    $ printf "index operator not supported: %s" (show objTypeL)
+    | idx < 0 || idx >= max' = pure null'
+    | otherwise = pure $ Obj.elements left !! fromInteger idx
+  where
+    objTypeL = Obj.getObjectType left
+    objTypeI = Obj.getObjectType index
+    max'     = toInteger $ length $ Obj.elements left
+    idx      = Obj.intVal index
+
 
 
 -- | applyFunction

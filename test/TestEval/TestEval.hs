@@ -27,6 +27,7 @@ main = do
         , testStringConcatenation
         , testBuiltinFunctions
         , testArrayLiterals
+        , testArrayIndexExpressions
         ]
     return ()
 
@@ -495,3 +496,20 @@ testArrayLiterals = TestList
     ]
   where
     input1 = "[1, 2 * 2, 3 + 3]"
+
+
+-- | testArrayIndexExpressions
+--
+testArrayIndexExpressions :: Test
+testArrayIndexExpressions = TestList
+    [ "test array index expressions 1" ~: _evalObject "[1, 2, 3][0]" ~?= ObInt 1
+    , "test array index expressions 2" ~: _evalObject "[1, 2, 3][1]" ~?= ObInt 2
+    , "test array index expressions 3" ~: _evalObject "[1, 2, 3][2]" ~?= ObInt 3
+    , "test array index expressions 4" ~: _evalObject "let i = 0; [1][i]" ~?= ObInt 1
+    , "test array index expressions 5" ~: _evalObject "[1, 2, 3][1 + 1]" ~?= ObInt 3
+    , "test array index expressions 6" ~: _evalObject "let myArray = [1, 2, 3]; myArray[2]" ~?= ObInt 3
+    , "test array index expressions 7" ~: _evalObject "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2]" ~?= ObInt 6
+    , "test array index expressions 8" ~: _evalObject "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]" ~?= ObInt 2
+    , "test array index expressions 9" ~: _evalObject "[1, 2, 3][3]" ~?= ObNull
+    , "test array index expressions 10" ~: _evalObject "[1, 2, 3][-1]" ~?= ObNull
+    ]
