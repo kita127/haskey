@@ -486,6 +486,10 @@ testBuiltinFunctions = TestList
     , "first 2" ~: _evalObject input9 ~?= ObInt 100
     , "first string" ~: _evalObject input10 ~?= ObErr "argument to `first` must be ARRAY, got STRING_OBJ"
     , "first no elements" ~: _evalObject input11 ~?= ObNull
+    , "last 1" ~: _evalObject inputLast1 ~?= ObInt 3
+    , "last empty list" ~: _evalObject inputLast2 ~?= ObNull
+    , "last string" ~: _evalObject inputLast3 ~?= ObErr "argument to `last` must be ARRAY, got STRING_OBJ"
+    , "last few argments" ~: _evalObject inputLast4 ~?= ObErr "wrong number of arguments. got=3, want=1"
     ]
   where
     input1 = [r|len("")|]
@@ -499,6 +503,10 @@ testBuiltinFunctions = TestList
     input9 = [r|first([100])|]
     input10 = [r|first("abcde")|]
     input11 = [r|first([])|]
+    inputLast1 = [r|last([1,2,3])|]
+    inputLast2 = [r|last([])|]
+    inputLast3 = [r|last("hoge")|]
+    inputLast4 = [r|last([5,6,7], 125, "hoge")|]
 
 -- | testArrayLiterals
 --

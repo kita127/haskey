@@ -12,7 +12,8 @@ import           Text.Printf
 -- | builtins
 --
 builtins :: M.Map T.Text Obj.Object
-builtins = M.fromList [("len", wrap bLen), ("first", wrap bFirst)]
+builtins = M.fromList
+    [("len", wrap bLen), ("first", wrap bFirst), ("last", wrap bLast)]
 
 -- | wrapBf
 --
@@ -45,4 +46,18 @@ bFirst [arg] = case Obj.getObjectType arg of
             $ show
             $ Obj.getObjectType arg
 bFirst args =
+    Obj.Error $ printf "wrong number of arguments. got=%d, want=1" $ length args
+
+-- | bLast
+--
+bLast :: [Obj.Object] -> Obj.Object
+bLast [arg] = case Obj.getObjectType arg of
+    Obj.ARRAY_OBJ ->
+        if null (Obj.elements arg) then Obj.Null else last $ Obj.elements arg
+    _ ->
+        Obj.Error
+            $ printf "argument to `last` must be ARRAY, got %s"
+            $ show
+            $ Obj.getObjectType arg
+bLast args =
     Obj.Error $ printf "wrong number of arguments. got=%d, want=1" $ length args
