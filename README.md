@@ -13,8 +13,8 @@ Go言語でつくるインタプリタ本と同じ条件とするため以下の
 - base パッケージのみ使用する
     - text、bytestring などは例外でOK
 - Parsec は使わない
-    - パーサコンビネータは使わない
-    - もちろん Alex、Happy などの字句解析、構文解析系のライブラリも使用しない
+    - その他パーサコンビネータ系のライブラリは使用しない
+- Alex、Happy などの字句解析、構文解析系のライブラリも使用しない
 
 ## Synopsis
 ```
@@ -165,6 +165,33 @@ love Haskell
 600
 ```
 
+#### 配列
+```
+>> let array = [1, 2, 3, 4];
+>> array[2];
+3
+>> array[0] + array[3];
+5
+>> [5, 6, 7][1];
+6
+```
+
+#### 組み込み関数
+```
+>> let array = [1, 2, 3, 4];
+>> len(array);
+4
+>> len("haskell");
+7
+>> first(array);
+1
+>> last(array);
+4
+>> rest(array);
+[2, 3, 4]
+>> push(array, "xyz");
+[1, 2, 3, 4, xyz]
+```
 
 ## Copyright
 原作：動物のお医者さん
