@@ -495,6 +495,12 @@ testBuiltinFunctions = TestList
     , "rest string" ~: _evalObject inputRest3 ~?= ObErr "argument to `rest` must be ARRAY, got STRING_OBJ"
     , "rest 2" ~: _evalObject inputRest4 ~?= ObArray [ObInt 6,ObInt 7]
     , "rest empty list" ~: _evalObject inputRest5 ~?= ObNull
+    , "push 1" ~: _evalObject inputPush1 ~?= ObArray [ObInt 1, ObInt 2, ObInt 3, ObInt 4, ObInt 5]
+    , "push 2" ~: _evalObject inputPush2 ~?= ObArray [ObInt 1, ObInt 2, ObInt 3]
+    , "push 3" ~: _evalObject inputPush3 ~?= ObArray [ObInt 1, ObInt 2, ObInt 3, ObInt 5]
+    , "push 4" ~: _evalObject inputPush4 ~?= ObArray [ObStr "hoge"]
+    , "push not 2 arguments 1" ~: _evalObject inputPush5 ~?= ObErr "wrong number of arguments. got=1, want=2"
+    , "push not 2 arguments 2" ~: _evalObject inputPush6 ~?= ObErr "wrong number of arguments. got=0, want=2"
     ]
   where
     input1 = [r|len("")|]
@@ -517,6 +523,12 @@ testBuiltinFunctions = TestList
     inputRest3 = [r|rest("string")|]
     inputRest4 = [r|let arr = [5, 6, 7];rest(arr);|]
     inputRest5 = [r|rest([])|]
+    inputPush1 = [r|push([1, 2, 3, 4], 5)|]
+    inputPush2 = [r|let a = [1,2,3]; let b = push(a, 5); a;|]
+    inputPush3 = [r|let a = [1,2,3]; let b = push(a, 5); b;|]
+    inputPush4 = [r|push([], "hoge")|]
+    inputPush5 = [r|push([1,2,3])|]
+    inputPush6 = [r|push()|]
 
 -- | testArrayLiterals
 --

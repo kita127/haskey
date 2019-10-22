@@ -17,6 +17,7 @@ builtins = M.fromList
     , ("first", wrap bFirst)
     , ("last" , wrap bLast)
     , ("rest" , wrap bRest)
+    , ("push" , wrap bPush)
     ]
 
 -- | wrapBf
@@ -80,3 +81,16 @@ bRest [arg] = case Obj.getObjectType arg of
             $ Obj.getObjectType arg
 bRest args =
     Obj.Error $ printf "wrong number of arguments. got=%d, want=1" $ length args
+
+-- | bPush
+--
+bPush :: [Obj.Object] -> Obj.Object
+bPush [a1, a2] = case Obj.getObjectType a1 of
+    Obj.ARRAY_OBJ -> Obj.Array $ Obj.elements a1 ++ [a2]
+    _ ->
+        Obj.Error
+            $ printf "argument to `push` must be ARRAY, got %s"
+            $ show
+            $ Obj.getObjectType a1
+bPush args =
+    Obj.Error $ printf "wrong number of arguments. got=%d, want=2" $ length args
