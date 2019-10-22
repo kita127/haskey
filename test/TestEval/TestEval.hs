@@ -26,11 +26,14 @@ main = do
         , testStringLiteral
         , testStringConcatenation
         , testBuiltinFunctions
+        , testArrayLiterals
+        , testArrayIndexExpressions
+        , testBuiltinDrive
         ]
     return ()
 
 
-data Ob = ObInt Integer | ObStr T.Text | ObNull | ObErr String| Unexpected String
+data Ob = ObInt Integer | ObStr T.Text | ObNull | ObArray [Ob] | ObErr String| Unexpected String
     deriving (Eq, Show)
 
 -- | support
@@ -58,12 +61,15 @@ _intValue = Obj.intVal . _object
 
 
 _evalObject :: T.Text -> Ob
-_evalObject s = case _object s of
-        Obj.Null        -> ObNull
-        Obj.Integer v   -> ObInt v
-        Obj.String v    -> ObStr v
-        Obj.Error   msg -> ObErr msg
-        o               -> Unexpected $ show $ Obj.getObjectType o
+_evalObject = convOb . _object
+
+convOb :: Obj.Object -> Ob
+convOb       Obj.Null          = ObNull
+convOb       (Obj.Integer v)   = ObInt v
+convOb       (Obj.String v)    = ObStr v
+convOb       (Obj.Array es)    = ObArray (map convOb es)
+convOb       (Obj.Error   msg) = ObErr msg
+convOb       o                 = Unexpected $ show $ Obj.getObjectType o
 
 -- | testEvalIntegerExpression
 --
@@ -475,6 +481,27 @@ testBuiltinFunctions = TestList
     , "len hello world" ~: _evalObject input3 ~?= ObInt 11
     , "len number" ~: _evalObject input4 ~?= ObErr "argument to `len` not supported, got INTEGER"
     , "len two arguments" ~: _evalObject input5 ~?= ObErr "wrong number of arguments. got=2, want=1"
+    , "len 3 array literal" ~: _evalObject input6 ~?= ObInt 3
+    , "len 3 array identifire" ~: _evalObject input7 ~?= ObInt 5
+    , "first 1" ~: _evalObject input8 ~?= ObStr "hoge"
+    , "first 2" ~: _evalObject input9 ~?= ObInt 100
+    , "first string" ~: _evalObject input10 ~?= ObErr "argument to `first` must be ARRAY, got STRING_OBJ"
+    , "first no elements" ~: _evalObject input11 ~?= ObNull
+    , "last 1" ~: _evalObject inputLast1 ~?= ObInt 3
+    , "last empty list" ~: _evalObject inputLast2 ~?= ObNull
+    , "last string" ~: _evalObject inputLast3 ~?= ObErr "argument to `last` must be ARRAY, got STRING_OBJ"
+    , "last few arguments" ~: _evalObject inputLast4 ~?= ObErr "wrong number of arguments. got=3, want=1"
+    , "rest 1" ~: _evalObject inputRest1 ~?= ObArray [ObInt 2,ObInt 3,ObInt 4,ObInt 5]
+    , "rest few arguments" ~: _evalObject inputRest2 ~?= ObErr "wrong number of arguments. got=2, want=1"
+    , "rest string" ~: _evalObject inputRest3 ~?= ObErr "argument to `rest` must be ARRAY, got STRING_OBJ"
+    , "rest 2" ~: _evalObject inputRest4 ~?= ObArray [ObInt 6,ObInt 7]
+    , "rest empty list" ~: _evalObject inputRest5 ~?= ObNull
+    , "push 1" ~: _evalObject inputPush1 ~?= ObArray [ObInt 1, ObInt 2, ObInt 3, ObInt 4, ObInt 5]
+    , "push 2" ~: _evalObject inputPush2 ~?= ObArray [ObInt 1, ObInt 2, ObInt 3]
+    , "push 3" ~: _evalObject inputPush3 ~?= ObArray [ObInt 1, ObInt 2, ObInt 3, ObInt 5]
+    , "push 4" ~: _evalObject inputPush4 ~?= ObArray [ObStr "hoge"]
+    , "push not 2 arguments 1" ~: _evalObject inputPush5 ~?= ObErr "wrong number of arguments. got=1, want=2"
+    , "push not 2 arguments 2" ~: _evalObject inputPush6 ~?= ObErr "wrong number of arguments. got=0, want=2"
     ]
   where
     input1 = [r|len("")|]
@@ -482,4 +509,79 @@ testBuiltinFunctions = TestList
     input3 = [r|len("hello world")|]
     input4 = [r|len(1)|]
     input5 = [r|len("one", "two")|]
+    input6 = [r|len([1, 2, 3])|]
+    input7 = [r|let myArray = [1, 2, 3, 4, 5];len(myArray);|]
+    input8 = [r|first(["hoge", 3, "fuga"])|]
+    input9 = [r|first([100])|]
+    input10 = [r|first("abcde")|]
+    input11 = [r|first([])|]
+    inputLast1 = [r|last([1,2,3])|]
+    inputLast2 = [r|last([])|]
+    inputLast3 = [r|last("hoge")|]
+    inputLast4 = [r|last([5,6,7], 125, "hoge")|]
+    inputRest1 = [r|rest([1,2,3,4,5])|]
+    inputRest2 = [r|rest([1,2,3,4,5], "hoge")|]
+    inputRest3 = [r|rest("string")|]
+    inputRest4 = [r|let arr = [5, 6, 7];rest(arr);|]
+    inputRest5 = [r|rest([])|]
+    inputPush1 = [r|push([1, 2, 3, 4], 5)|]
+    inputPush2 = [r|let a = [1,2,3]; let b = push(a, 5); a;|]
+    inputPush3 = [r|let a = [1,2,3]; let b = push(a, 5); b;|]
+    inputPush4 = [r|push([], "hoge")|]
+    inputPush5 = [r|push([1,2,3])|]
+    inputPush6 = [r|push()|]
 
+-- | testArrayLiterals
+--
+testArrayLiterals :: Test
+testArrayLiterals = TestList
+    [ "test array literals 1" ~: _evalObject input1 ~?= ObArray [ObInt 1, ObInt 4, ObInt 6]
+    ]
+  where
+    input1 = "[1, 2 * 2, 3 + 3]"
+
+
+-- | testArrayIndexExpressions
+--
+testArrayIndexExpressions :: Test
+testArrayIndexExpressions = TestList
+    [ "test array index expressions 1" ~: _evalObject "[1, 2, 3][0]" ~?= ObInt 1
+    , "test array index expressions 2" ~: _evalObject "[1, 2, 3][1]" ~?= ObInt 2
+    , "test array index expressions 3" ~: _evalObject "[1, 2, 3][2]" ~?= ObInt 3
+    , "test array index expressions 4" ~: _evalObject "let i = 0; [1][i]" ~?= ObInt 1
+    , "test array index expressions 5" ~: _evalObject "[1, 2, 3][1 + 1]" ~?= ObInt 3
+    , "test array index expressions 6" ~: _evalObject "let myArray = [1, 2, 3]; myArray[2]" ~?= ObInt 3
+    , "test array index expressions 7" ~: _evalObject "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2]" ~?= ObInt 6
+    , "test array index expressions 8" ~: _evalObject "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]" ~?= ObInt 2
+    , "test array index expressions 9" ~: _evalObject "[1, 2, 3][3]" ~?= ObNull
+    , "test array index expressions 10" ~: _evalObject "[1, 2, 3][-1]" ~?= ObNull
+    ]
+
+
+-- | testBuiltinDrive
+--
+testBuiltinDrive :: Test
+testBuiltinDrive = TestList
+    [ --"test program sample function" ~: _evalObject inputSample ~?= ObInt 101
+    --, "test program map function" ~: _evalObject inputMap ~?= ObArray [ObInt 2, ObInt 4, ObInt 6, ObInt 8]
+    ]
+  where
+    inputSample = [r| let add = fn(arg) { fn(arg2) { arg2 + 200; }; 100; }; add(1); |]
+-- map function source
+    inputMap = [r|
+let map = fn(arr, f) {
+    let iter = fn(arr, accumulated) {
+        if (len(arr) == 0) {
+            accumulated
+        } else {
+            iter(rest(arr), push(accumulated, f(first(arr))));
+        }
+    };
+
+    iter(arr, []);
+};
+
+let a = [1, 2, 3, 4];
+let double = fn(x) { x * 2 };
+map(a, double);
+|]

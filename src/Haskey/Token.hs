@@ -7,7 +7,7 @@ module Haskey.Token
     )
 where
 
-import qualified Data.Text as T
+import qualified Data.Text                     as T
 
 data Token = Token
              { tokenType :: TokenType
@@ -46,6 +46,8 @@ data TokenType = Illegal
                | Rparen         -- ")"
                | Lbrace         -- "{"
                | Rbrace         -- "}"
+               | Lbracket       -- "["
+               | Rbracket       -- "]"
 
                -- キーワード
                | Function       -- "fn"

@@ -27,6 +27,8 @@ main = do
       , testLetStatements
       , testReturnStatements
       , testStringLiteral
+      , testParsingArrayLiteral
+      , testParsingIndexExpressions
 
       , testInvalid
       ]
@@ -186,11 +188,28 @@ testLexer = TestList
         -- EOF
         , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
         ]
+
+  , "testLexer test 6 array" ~:
+        Lx.lexicalize testLexerInput6 ~?= [
+          Tok.Token { Tok.tokenType = Tok.Lbracket , Tok.literal = "[" }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "1" }
+        , Tok.Token { Tok.tokenType = Tok.Comma , Tok.literal = "," }
+        , Tok.Token { Tok.tokenType = Tok.Int , Tok.literal = "2" }
+        , Tok.Token { Tok.tokenType = Tok.Rbracket , Tok.literal = "]" }
+        , Tok.Token { Tok.tokenType = Tok.Semicolon , Tok.literal = ";" }
+
+        -- EOF
+        , Tok.Token { Tok.tokenType = Tok.Eof , Tok.literal = "" }
+        ]
+
   ]
   where
     testLexerInput5 = [r|
 "foobar"
 "foo bar"
+|]
+    testLexerInput6 = [r|
+[1, 2];
 |]
 
 -- | parser
@@ -369,6 +388,11 @@ testOperatorPrecedenceParsing = TestList
 
   , "testOperatorPrecedenceParsing call function 2" ~:
         testHelper "add(a + b + c * d / f + g)" ~?= "add((((a + b) + ((c * d) / f)) + g))"
+
+  , "testOperatorPrecedenceParsing index 1" ~:
+        testHelper "a * [1, 2, 3, 4][b * c] * d" ~?= "((a * ([1, 2, 3, 4][(b * c)])) * d)"
+  , "testOperatorPrecedenceParsing index 2" ~:
+        testHelper "add(a * b[2], b[1], 2 * [1, 2][1])" ~?= "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"
   ]
   where
     testHelper = Ast.string . Ps.parse . Lx.lexicalize
@@ -627,13 +651,47 @@ testStringLiteral = TestList
     input1 = [r|"hello world";|]
 
     _test (Ast.StringLiteral _ s) = Right s
-    _test x = Left $ Ast.string x
+    _test x                       = Left $ Ast.string x
 
     extractExpression input = case (head . _statements) input of
         (Ast.ExpressionStatement _ expr) -> Right expr
-        stms -> Left $ Ast.string stms
+        stms                             -> Left $ Ast.string stms
 
 
+-- | testParsingArrayLiteral
+--
+testParsingArrayLiteral :: Test
+testParsingArrayLiteral = TestList
+  [ "testParsingArrayLiteral 1" ~: _test 0 (fetchFirstExpression input1)  ~?=
+        Right [ExpInt 1]
+
+  , "testParsingArrayLiteral 2" ~: _test 1 (fetchFirstExpression input1)  ~?=
+        Right [ExpInt 2, ExpOp "*", ExpInt 2]
+
+  , "testParsingArrayLiteral 3" ~: _test 2 (fetchFirstExpression input1)  ~?=
+        Right [ExpInt 3, ExpOp "+", ExpInt 3]
+  ]
+  where
+    input1 = "[1, 2 * 2, 3 + 3]"
+    _test i (Ast.ArrayLiteral _ els) = Right $ testExpContents $ els !! i
+    _test _ x                       = Left $ Ast.string x
+
+
+-- | testParsingIndexExpressions
+--
+testParsingIndexExpressions :: Test
+testParsingIndexExpressions = TestList
+  [ "testParsingIndexExpressions 1 left" ~: _testLeft (fetchFirstExpression input1)  ~?=
+        Right [ExpIdent "myArray"]
+  , "testParsingIndexExpressions 1 index" ~: _testIndex (fetchFirstExpression input1)  ~?=
+        Right [ExpInt 1, ExpOp "+", ExpInt 1]
+  ]
+  where
+    input1 = "myArray[1 + 1]"
+    _testLeft (Ast.IndexExpression _ l _) = Right $ testExpContents l
+    _testLeft x = Left $ Ast.string x
+    _testIndex a@(Ast.IndexExpression _ _ i) = Right $ testExpContents i
+    _testIndex x = Left $ Ast.string x
 
 -- | testInvalid
 --

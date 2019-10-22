@@ -109,6 +109,7 @@ data Precedence = Lowest
                 | Product           -- *
                 | Prefix            -- -X or !X
                 | Call              -- myFunction(X)
+                | Index             -- array[index]
                 deriving (Eq, Show, Ord)
 
 -- | precedences
@@ -124,6 +125,7 @@ precedences = M.fromList
     , (Tok.Slash   , Product)
     , (Tok.Asterisk, Product)
     , (Tok.Lparen  , Call)
+    , (Tok.Lbracket, Index)
     ]
 
 -- | prefixParseFns
@@ -140,6 +142,7 @@ prefixParseFns = M.fromList
     , (Tok.Function, parseFunctionLiteral)
     , (Tok.Lparen  , parseGroupedExpression)
     , (Tok.STRING  , parseStringLiteral)
+    , (Tok.Lbracket, parseArrayLiteral)
     ]
 
 -- | infixParseFns
@@ -155,6 +158,7 @@ infixParseFns = M.fromList
     , (Tok.Lt      , parseInfixExpression)
     , (Tok.Gt      , parseInfixExpression)
     , (Tok.Lparen  , parseCallExpression)
+    , (Tok.Lbracket, parseIndexExpression)
     ]
 
 
@@ -363,10 +367,24 @@ parseGroupedExpression = do
 --
 parseStringLiteral :: Parser Ast.Expression
 parseStringLiteral =
-    Ast.StringLiteral
-        <$> curToken
-        <*> (Tok.literal <$> curToken)
+    Ast.StringLiteral <$> curToken <*> (Tok.literal <$> curToken)
 
+
+-- | parseArrayLiteral
+--
+parseArrayLiteral :: Parser Ast.Expression
+parseArrayLiteral =
+    Ast.ArrayLiteral <$> nextToken <*> sepBy (parseExpression Lowest) Tok.Comma
+
+-- | parseIndexExpression
+--
+parseIndexExpression :: Ast.Expression -> Parser Ast.Expression
+parseIndexExpression left =
+    Ast.IndexExpression
+        <$> nextToken
+        <*> pure left
+        <*> parseExpression Lowest
+        <*  next (expectPeek Tok.Rbracket)
 
 -- | parseFn
 --
@@ -475,7 +493,7 @@ sepBy p tokType = someParams <|> return []
   where
     someParams = do
         r <- p
-        (next . next . expectPeek) Tok.Comma
+        (next . next . expectPeek) tokType
             *>  fmap (r :) (sepBy p tokType)
             <|> next (return [r])
 -- | next

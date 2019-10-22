@@ -11,8 +11,8 @@ module Haskey.Ast
     )
 where
 
-import qualified Data.Text    as T
-import qualified Haskey.Token as Tok
+import qualified Data.Text                     as T
+import qualified Haskey.Token                  as Tok
 
 -- | class Stringer
 --
@@ -110,6 +110,15 @@ data Expression = Identifire {
                     expToken  :: Tok.Token
                   , expValue  :: T.Text
                   }
+                | ArrayLiteral {
+                    expToken  :: Tok.Token
+                  , elements  :: [Expression]
+                  }
+                | IndexExpression {
+                    expToken  :: Tok.Token
+                  , left  :: Expression
+                  , index :: Expression
+                  }
                 deriving (Eq, Show)
 
 instance Stringer Expression where
@@ -126,6 +135,9 @@ instance Stringer Expression where
     string (CallExpression _ f as) =
         string f <> "(" <> T.intercalate ", " (map string as) <> ")"
     string (StringLiteral _ s) = s
+    string (ArrayLiteral _ els) =
+        "[" <> T.intercalate ", " (map string els) <> "]"
+    string (IndexExpression _ l i) = "(" <> string l <> "[" <> string i <> "])"
 
 
 -- | elseStr
