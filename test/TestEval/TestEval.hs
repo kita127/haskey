@@ -28,6 +28,7 @@ main = do
         , testBuiltinFunctions
         , testArrayLiterals
         , testArrayIndexExpressions
+        , testBuiltinDrive
         ]
     return ()
 
@@ -555,3 +556,32 @@ testArrayIndexExpressions = TestList
     , "test array index expressions 9" ~: _evalObject "[1, 2, 3][3]" ~?= ObNull
     , "test array index expressions 10" ~: _evalObject "[1, 2, 3][-1]" ~?= ObNull
     ]
+
+
+-- | testBuiltinDrive
+--
+testBuiltinDrive :: Test
+testBuiltinDrive = TestList
+    [ --"test program sample function" ~: _evalObject inputSample ~?= ObInt 101
+    --, "test program map function" ~: _evalObject inputMap ~?= ObArray [ObInt 2, ObInt 4, ObInt 6, ObInt 8]
+    ]
+  where
+    inputSample = [r| let add = fn(arg) { fn(arg2) { arg2 + 200; }; 100; }; add(1); |]
+-- map function source
+    inputMap = [r|
+let map = fn(arr, f) {
+    let iter = fn(arr, accumulated) {
+        if (len(arr) == 0) {
+            accumulated
+        } else {
+            iter(rest(arr), push(accumulated, f(first(arr))));
+        }
+    };
+
+    iter(arr, []);
+};
+
+let a = [1, 2, 3, 4];
+let double = fn(x) { x * 2 };
+map(a, double);
+|]
