@@ -489,7 +489,12 @@ testBuiltinFunctions = TestList
     , "last 1" ~: _evalObject inputLast1 ~?= ObInt 3
     , "last empty list" ~: _evalObject inputLast2 ~?= ObNull
     , "last string" ~: _evalObject inputLast3 ~?= ObErr "argument to `last` must be ARRAY, got STRING_OBJ"
-    , "last few argments" ~: _evalObject inputLast4 ~?= ObErr "wrong number of arguments. got=3, want=1"
+    , "last few arguments" ~: _evalObject inputLast4 ~?= ObErr "wrong number of arguments. got=3, want=1"
+    , "rest 1" ~: _evalObject inputRest1 ~?= ObArray [ObInt 2,ObInt 3,ObInt 4,ObInt 5]
+    , "rest few arguments" ~: _evalObject inputRest2 ~?= ObErr "wrong number of arguments. got=2, want=1"
+    , "rest string" ~: _evalObject inputRest3 ~?= ObErr "argument to `rest` must be ARRAY, got STRING_OBJ"
+    , "rest 2" ~: _evalObject inputRest4 ~?= ObArray [ObInt 6,ObInt 7]
+    , "rest empty list" ~: _evalObject inputRest5 ~?= ObNull
     ]
   where
     input1 = [r|len("")|]
@@ -507,6 +512,11 @@ testBuiltinFunctions = TestList
     inputLast2 = [r|last([])|]
     inputLast3 = [r|last("hoge")|]
     inputLast4 = [r|last([5,6,7], 125, "hoge")|]
+    inputRest1 = [r|rest([1,2,3,4,5])|]
+    inputRest2 = [r|rest([1,2,3,4,5], "hoge")|]
+    inputRest3 = [r|rest("string")|]
+    inputRest4 = [r|let arr = [5, 6, 7];rest(arr);|]
+    inputRest5 = [r|rest([])|]
 
 -- | testArrayLiterals
 --

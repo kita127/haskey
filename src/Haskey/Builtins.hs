@@ -13,7 +13,11 @@ import           Text.Printf
 --
 builtins :: M.Map T.Text Obj.Object
 builtins = M.fromList
-    [("len", wrap bLen), ("first", wrap bFirst), ("last", wrap bLast)]
+    [ ("len"  , wrap bLen)
+    , ("first", wrap bFirst)
+    , ("last" , wrap bLast)
+    , ("rest" , wrap bRest)
+    ]
 
 -- | wrapBf
 --
@@ -60,4 +64,19 @@ bLast [arg] = case Obj.getObjectType arg of
             $ show
             $ Obj.getObjectType arg
 bLast args =
+    Obj.Error $ printf "wrong number of arguments. got=%d, want=1" $ length args
+
+-- | bRest
+--
+bRest :: [Obj.Object] -> Obj.Object
+bRest [arg] = case Obj.getObjectType arg of
+    Obj.ARRAY_OBJ -> if null (Obj.elements arg)
+        then Obj.Null
+        else Obj.Array $ tail $ Obj.elements arg
+    _ ->
+        Obj.Error
+            $ printf "argument to `rest` must be ARRAY, got %s"
+            $ show
+            $ Obj.getObjectType arg
+bRest args =
     Obj.Error $ printf "wrong number of arguments. got=%d, want=1" $ length args
