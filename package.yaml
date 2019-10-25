@@ -49,9 +49,9 @@ executables:
 # 個別でのテスト指定
 # $ stack test haskey:test:parse-test
 tests:
-  parse-test:
-    main:                TestLexerAndParser.hs
-    source-dirs:         test/TestLexerAndParser
+  lexer:
+    main:                TestLexer.hs
+    source-dirs:         test/TestLexer
     ghc-options:
     - -threaded
     - -rtsopts
@@ -61,7 +61,19 @@ tests:
     - HUnit
     - raw-strings-qq
     - text
-  eval-test:
+  parser:
+    main:                TestParser.hs
+    source-dirs:         test/TestParser
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - haskey
+    - HUnit
+    - raw-strings-qq
+    - text
+  eval:
     main:                TestEval.hs
     source-dirs:         test/TestEval
     ghc-options:
