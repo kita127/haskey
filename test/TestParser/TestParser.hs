@@ -38,6 +38,33 @@ main = do
 
 -- | helper
 --
+------------------------------------------------------------------------
+--
+data Exp = ExpIdent T.Text | ExpInt Integer | ExpBool Bool | ExpOp T.Text | ExInvalid
+    deriving (Eq, Show)
+
+tProgram :: T.Text -> Ast.Program
+tProgram = Ps.parse . Lx.lexicalize
+
+tExpressionStatement :: Ast.Statement -> Either String Ast.Statement
+tExpressionStatement e@(Ast.ExpressionStatement _ _) = Right e
+tExpressionStatement x                               = Left $ show x
+
+tIndexStatement :: Int -> T.Text -> Ast.Statement
+tIndexStatement n = (!! n) . Ast.statements . tProgram
+
+tExpContents :: Ast.Expression -> [Exp]
+tExpContents (Ast.Identifire     _ v         ) = [ExpIdent v]
+tExpContents (Ast.IntegerLiteral _ v         ) = [ExpInt v]
+tExpContents (Ast.Boolean        _ v         ) = [ExpBool v]
+tExpContents (Ast.PrefixExpression _ op right) = ExpOp op : tExpContents right
+tExpContents (Ast.InfixExpression _ l op right) =
+    tExpContents l ++ [ExpOp op] ++ tExpContents right
+tExpContents _ = [ExInvalid]
+
+
+
+
 _statements = Ast.statements . Ps.parse . Lx.lexicalize
 
 _firstStatement = head . _statements
@@ -49,76 +76,92 @@ isExpStmt (Ast.ExpressionStatement _ _) = Right "ExpressionStatement"
 isExpStmt s                             = Left $ Ast.string s
 
 
-testLetStatementInput1 = [r|
-let x = 5;
-let y = 10;
-let foobar = 838383;
-|]
 
+------------------------------------------------------------------------
+
+
+
+-- | testLetStatement
+--
 testLetStatement :: Test
 testLetStatement = TestList
     [ "testLetStatement test 1"
-      ~:  (map testIdentifireName . Ast.statements . Ps.parse . Lx.lexicalize)
-              testLetStatementInput1
-      ~?= ["x", "y", "foobar"]
+    ~:  (name . (!! 0) . Ast.statements . tProgram) input1
+    ~?= Right "x"
+    , "testLetStatement test 2"
+    ~:  (name . (!! 1) . Ast.statements . tProgram) input1
+    ~?= Right "y"
+    , "testLetStatement test 3"
+    ~:  (name . (!! 2) . Ast.statements . tProgram) input1
+    ~?= Right "foobar"
     ]
   where
-    testIdentifireName :: Ast.Statement -> T.Text
-    testIdentifireName (  Ast.LetStatement _ n v) = Ast.expValue n
-    testIdentifireName f@(Ast.FailStatement _ _ ) = Ast.string f
+    name (Ast.LetStatement _ n _) = Right $ Ast.expValue n
+    name x                        = Left $ show x
+
+    input1 = [r|
+    let x = 5;
+    let y = 10;
+    let foobar = 838383;
+    |]
 
 
-testReturnStatementInput1 = [r|
-return 5;
-return 10;
-return 993322;
-|]
-
+-- | testReturnStatement
+--
 testReturnStatement :: Test
 testReturnStatement = TestList
     [ "testReturnStatement test 1"
-      ~:  (testReturnStatementLiteral . Ps.parse . Lx.lexicalize)
-              testReturnStatementInput1
-      ~?= ["return", "return", "return"]
+    ~:  (contents . (!! 0) . Ast.statements . tProgram) input1
+    ~?= Right ("return", 5)
+    , "testReturnStatement test 2"
+    ~:  (contents . (!! 1) . Ast.statements . tProgram) input1
+    ~?= Right ("return", 10)
+    , "testReturnStatement test 3"
+    ~:  (contents . (!! 2) . Ast.statements . tProgram) input1
+    ~?= Right ("return", 993322)
     ]
   where
-    testReturnStatementLiteral :: Ast.Program -> [T.Text]
-    testReturnStatementLiteral =
-        map (Tok.literal . Ast.stmtToken) . Ast.statements
+    contents (Ast.ReturnStatement t v) = Right (Tok.literal t, Ast.intValue v)
+    contents x                         = Left $ show x
 
-
-data Exp = ExpIdent T.Text | ExpInt Integer | ExpBool Bool | ExpOp T.Text
-    deriving (Eq, Show)
-
--- | testExpContents
---
-testExpContents :: Ast.Expression -> [Exp]
-testExpContents (Ast.Identifire     _ v     ) = [ExpIdent v]
-testExpContents (Ast.IntegerLiteral _ v     ) = [ExpInt v]
-testExpContents (Ast.Boolean        _ v     ) = [ExpBool v]
-testExpContents (Ast.PrefixExpression _ op r) = [ExpOp op] ++ testExpContents r
-testExpContents (Ast.InfixExpression _ l op r) =
-    testExpContents l ++ [ExpOp op] ++ testExpContents r
-
+    input1 = [r|
+    return 5;
+    return 10;
+    return 993322;
+    |]
 
 
 
 -- | testIdentifireExpression
 testIdentifireExpression :: Test
 testIdentifireExpression = TestList
-    [ "testIdentifireExpression test 1" ~: testHelper "foobar" ~?= "foobar"
-    , "testIdentifireExpression test 2" ~: testHelper "foobar;" ~?= "foobar"
+    [ "testIdentifireExpression test 1" ~: helper "foobar" ~?= Right "foobar"
+    , "testIdentifireExpression test 2" ~: helper "foobar;" ~?= Right "foobar"
+    , "testIdentifireExpression test 3" ~: helper "identifire;;;" ~?= Right
+        "identifire"
     ]
-    where testHelper = Ast.string . fetchFirstExpression
+  where
+    tIdentifire (Ast.Identifire _ v) = Right v
+    tIdentifire x                    = Left $ show x
+    helper a = do
+        let x = tIndexStatement 0 a
+        y <- tExpressionStatement x
+        let z = Ast.expression y
+        tIdentifire z
+
 
 -- | testIntegerLiteralExpression
 --
 testIntegerLiteralExpression :: Test
 testIntegerLiteralExpression = TestList
-    [ "testIntegerLiteralExpression test 1"
-      ~:  (Ast.string . fetchFirstExpression) "5"
-      ~?= "5"
-    ]
+    ["testIntegerLiteralExpression test 1" ~: helper "5" ~?= Right "5"]
+  where
+    helper arg = do
+        let a = tIndexStatement 0 arg
+        b <- tExpressionStatement a
+        let c = Ast.expression b
+            d = Ast.string c
+        return d
 
 
 
@@ -126,41 +169,55 @@ testIntegerLiteralExpression = TestList
 --
 testParsingPrefixExpressions :: Test
 testParsingPrefixExpressions = TestList
-    [ "testParsingPrefixExpressions test 1"
-    ~:  testHelper "!5;"
-    ~?= [ExpOp "!", ExpInt 5]
-    , "testParsingPrefixExpressions test 2"
-    ~:  testHelper "-15;"
-    ~?= [ExpOp "-", ExpInt 15]
-    , "testParsingPrefixExpressions test 3"
-    ~:  testHelper "!true"
-    ~?= [ExpOp "!", ExpBool True]
-    , "testParsingPrefixExpressions test 4"
-    ~:  testHelper "!false"
-    ~?= [ExpOp "!", ExpBool False]
+    [ "testParsingPrefixExpressions test 1" ~: helper "!5;" ~?= Right
+        [ExpOp "!", ExpInt 5]
+    , "testParsingPrefixExpressions test 2" ~: helper "-15;" ~?= Right
+        [ExpOp "-", ExpInt 15]
+    , "testParsingPrefixExpressions test 3" ~: helper "!true" ~?= Right
+        [ExpOp "!", ExpBool True]
+    , "testParsingPrefixExpressions test 4" ~: helper "!false" ~?= Right
+        [ExpOp "!", ExpBool False]
     ]
-    where testHelper = testExpContents . fetchFirstExpression
-
+  where
+    helper arg = do
+        let a = tIndexStatement 0 arg
+        b <- tExpressionStatement a
+        let c = Ast.expression b
+        return $ tExpContents c
 
 -- | testParsingInfixExpressions
 --
 testParsingInfixExpressions :: Test
 testParsingInfixExpressions = TestList
-    [ "testParsingInfixExpressions test 1"
-    ~:  testHelper "5 + 5;"
-    ~?= [ExpInt 5, ExpOp "+", ExpInt 5]
-    , testHelper "5 - 5;" ~?= [ExpInt 5, ExpOp "-", ExpInt 5]
-    , testHelper "5 * 5;" ~?= [ExpInt 5, ExpOp "*", ExpInt 5]
-    , testHelper "5 / 5;" ~?= [ExpInt 5, ExpOp "/", ExpInt 5]
-    , testHelper "5 > 5;" ~?= [ExpInt 5, ExpOp ">", ExpInt 5]
-    , testHelper "5 < 5;" ~?= [ExpInt 5, ExpOp "<", ExpInt 5]
-    , testHelper "5 == 5;" ~?= [ExpInt 5, ExpOp "==", ExpInt 5]
-    , testHelper "5 != 5;" ~?= [ExpInt 5, ExpOp "!=", ExpInt 5]
-    , testHelper "true == true" ~?= [ExpBool True, ExpOp "==", ExpBool True]
-    , testHelper "true != false" ~?= [ExpBool True, ExpOp "!=", ExpBool False]
-    , testHelper "false == false" ~?= [ExpBool False, ExpOp "==", ExpBool False]
+    [ "testParsingInfixExpressions test 1" ~: helper "5 + 5;" ~?= Right
+        [ExpInt 5, ExpOp "+", ExpInt 5]
+    , "testParsingInfixExpressions test 2" ~: helper "5 - 5;" ~?= Right
+        [ExpInt 5, ExpOp "-", ExpInt 5]
+    , "testParsingInfixExpressions test 3" ~: helper "5 * 5;" ~?= Right
+        [ExpInt 5, ExpOp "*", ExpInt 5]
+    , "testParsingInfixExpressions test 4" ~: helper "5 / 5;" ~?= Right
+        [ExpInt 5, ExpOp "/", ExpInt 5]
+    , "testParsingInfixExpressions test 5" ~: helper "5 > 5;" ~?= Right
+        [ExpInt 5, ExpOp ">", ExpInt 5]
+    , "testParsingInfixExpressions test 6" ~: helper "5 < 5;" ~?= Right
+        [ExpInt 5, ExpOp "<", ExpInt 5]
+    , "testParsingInfixExpressions test 7" ~: helper "5 == 5;" ~?= Right
+        [ExpInt 5, ExpOp "==", ExpInt 5]
+    , "testParsingInfixExpressions test 8" ~: helper "5 != 5;" ~?= Right
+        [ExpInt 5, ExpOp "!=", ExpInt 5]
+    , "testParsingInfixExpressions test 9" ~: helper "true == true" ~?= Right
+        [ExpBool True, ExpOp "==", ExpBool True]
+    , "testParsingInfixExpressions test 10" ~: helper "true != false" ~?= Right
+        [ExpBool True, ExpOp "!=", ExpBool False]
+    , "testParsingInfixExpressions test 11" ~: helper "false == false" ~?= Right
+        [ExpBool False, ExpOp "==", ExpBool False]
     ]
-    where testHelper = testExpContents . fetchFirstExpression
+  where
+    helper arg = do
+        let a = tIndexStatement 0 arg
+        b <- tExpressionStatement a
+        let c = Ast.expression b
+        return $ tExpContents c
 
 
 -- | testOperatorPrecedenceParsing
@@ -288,13 +345,13 @@ testIfExpression = TestList
     consequenceStmts     = Ast.stmtStatements . Ast.consequence . expression
     alternativeStmts     = Ast.stmtStatements . Ast.alternative . expression
     programStatementsLen = length . stmts
-    conditionExpression  = testExpContents . Ast.condition . expression
+    conditionExpression  = tExpContents . Ast.condition . expression
     consequenceStmtsLen  = length . consequenceStmts
     consequenceExpContents =
-        testExpContents . Ast.expression . head . consequenceStmts
+        tExpContents . Ast.expression . head . consequenceStmts
     alternativeStmtsLen = length . alternativeStmts
     alternativeExpContents =
-        testExpContents . Ast.expression . head . alternativeStmts
+        tExpContents . Ast.expression . head . alternativeStmts
     isAlternativeNil = (== Ast.NilStatement) . Ast.alternative . expression
 
 
@@ -330,8 +387,7 @@ testFunctionLiteral = TestList
     ~:  (isExpStmt . head . bodyStmts) "fn(x, y) { x + y; }"
     ~?= Right "ExpressionStatement"
     , "testFunctionLiteral  function's body expression statement contents"
-    ~:  (testExpContents . Ast.expression . head . bodyStmts)
-            "fn(x, y) { x + y; }"
+    ~:  (tExpContents . Ast.expression . head . bodyStmts) "fn(x, y) { x + y; }"
     ~?= [ExpIdent "x", ExpOp "+", ExpIdent "y"]
     , "testFunctionParameterParsing 1 parameters length"
     ~:  (length . parameters) "fn() {};"
@@ -359,7 +415,7 @@ testFunctionLiteral = TestList
 
     bodyStmts  = Ast.stmtStatements . Ast.body . fetchFirstExpression
 
-    paramContents n = (testExpContents . (!! n) . parameters)
+    paramContents n = (tExpContents . (!! n) . parameters)
 
 
 -- | testCallExpressionParsing
@@ -376,7 +432,7 @@ testCallExpressionParsing = TestList
     ~:  (isCallExpression . fetchFirstExpression) "add(1, 2 * 3, 4 + 5);"
     ~?= Right True
     , "testCallExpressionParsing  Is function identifire"
-    ~:  (testExpContents . Ast.function . fetchFirstExpression)
+    ~:  (tExpContents . Ast.function . fetchFirstExpression)
             "add(1, 2 * 3, 4 + 5);"
     ~?= [ExpIdent "add"]
     , "testCallExpressionParsing  arguments length"
@@ -397,7 +453,7 @@ testCallExpressionParsing = TestList
     isCallExpression ex                         = Left $ Ast.string ex
 
     argumentsContents n =
-        testExpContents . (!! n) . Ast.arguments . fetchFirstExpression
+        tExpContents . (!! n) . Ast.arguments . fetchFirstExpression
 
 -- | testLetStatements
 --
@@ -434,8 +490,8 @@ testLetStatements = TestList
     input1    = "let x = 5;"
     input2    = "let y = true;"
     input3    = "let foobar = y;"
-    testId    = testExpContents . Ast.name . head . _statements
-    testValue = testExpContents . Ast.value . head . _statements
+    testId    = tExpContents . Ast.name . head . _statements
+    testValue = tExpContents . Ast.value . head . _statements
 
 -- | testReturnStatements
 --
@@ -474,7 +530,7 @@ testReturnStatements = TestList
     input2     = "return true;"
     input3     = "return y;"
     testReturn = Tok.literal . Ast.stmtToken . head . _statements
-    testValue  = testExpContents . Ast.returnValue . head . _statements
+    testValue  = tExpContents . Ast.returnValue . head . _statements
 
 
 -- | testStringLiteral
@@ -512,7 +568,7 @@ testParsingArrayLiteral = TestList
     ]
   where
     input1 = "[1, 2 * 2, 3 + 3]"
-    _test i (Ast.ArrayLiteral _ els) = Right $ testExpContents $ els !! i
+    _test i (Ast.ArrayLiteral _ els) = Right $ tExpContents $ els !! i
     _test _ x                        = Left $ Ast.string x
 
 
@@ -529,9 +585,9 @@ testParsingIndexExpressions = TestList
     ]
   where
     input1 = "myArray[1 + 1]"
-    _testLeft (Ast.IndexExpression _ l _) = Right $ testExpContents l
+    _testLeft (Ast.IndexExpression _ l _) = Right $ tExpContents l
     _testLeft x                           = Left $ Ast.string x
-    _testIndex a@(Ast.IndexExpression _ _ i) = Right $ testExpContents i
+    _testIndex a@(Ast.IndexExpression _ _ i) = Right $ tExpContents i
     _testIndex x                             = Left $ Ast.string x
 
 -- | testInvalid
