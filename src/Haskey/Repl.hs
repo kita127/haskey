@@ -1,17 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
-module Haskey.Repl (
-  start
-) where
+module Haskey.Repl
+    ( start
+    )
+where
 
-import qualified Data.Text         as T
-import qualified Data.Text.IO      as TIO
-import qualified Haskey.Ast        as Ast
-import           Haskey.Evaluator  as Evl
+import qualified Data.Text                     as T
+import qualified Data.Text.IO                  as TIO
+import qualified Haskey.Ast                    as Ast
+import           Haskey.Evaluator              as Evl
 import           Haskey.Lexer
-import           Haskey.Object     as Obj
+import           Haskey.Object                 as Obj
 import           Haskey.Parser
-import qualified Haskey.Token      as Tok
+import qualified Haskey.Token                  as Tok
 import           System.IO
 import           Text.RawString.QQ
 
@@ -38,24 +39,26 @@ start :: IO ()
 start = do
     greet
     loop Obj.newEnvironment
-    where
-      loop env = do
-          prompt
-          l <- TIO.getLine
-          let prg = (parse . lexicalize) l
+  where
+    loop env = do
+        prompt
+        l <- TIO.getLine
+        let prg = (parse . lexicalize) l
 
-          if hasError prg
-          then do
-              printParseError prg
-              loop env
-          else do
-              let (obj, env') = (case Evl.runEvaluator (Evl.eval prg) env of
-                                      (Evl.Done obj env' ) -> (obj, env')
-                                      (Evl.Error obj env') -> (obj, env'))
-              if obj /= Obj.Void
-              then TIO.putStrLn $ Obj.inspect obj
-              else return ()
-              loop env'
+        if hasError prg
+            then do
+                printParseError prg
+                loop env
+            else do
+                let (obj, env') =
+                        (case Evl.runEvaluator (Evl.eval prg) env of
+                            (Evl.Done  obj env') -> (obj, env')
+                            (Evl.Error obj env') -> (obj, env')
+                        )
+                if obj /= Obj.Void
+                    then TIO.putStrLn $ Obj.inspect obj
+                    else return ()
+                loop env'
 
 
 greet :: IO ()
