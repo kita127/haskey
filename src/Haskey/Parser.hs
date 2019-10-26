@@ -58,12 +58,15 @@ instance Monad Parser where
 
 instance Alternative Parser where
   -- many :: f a -> f [a]
-  -- | (<|>)
+  -- (<|>) :: f a -> f a -> f a
+  -- empty :: f a
+  --
     pa <|> pb = Parser
         (\input -> case runParser pa input of
             r@(Done _ _) -> r
             (  Fail _ _) -> runParser pb input
         )
+    empty = Parser (\_ -> Fail "parse fail" [])
 
 -- | nextToken
 --

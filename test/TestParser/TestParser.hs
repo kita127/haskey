@@ -17,7 +17,7 @@ main = do
         , testIdentifireExpression
         , testIntegerLiteralExpression
         , testParsingPrefixExpressions
-        , testParsingInfixExpressions
+        , testParsingInfixExpressions           -- ここまでリファクタ OK
         , testOperatorPrecedenceParsing
         , testBooleanExpression
         , testIfExpression

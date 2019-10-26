@@ -68,6 +68,7 @@ instance Alternative Evaluator where
             r@(Done  _ _) -> r
             (  Error _ _) -> runEvaluator eb env
         )
+    empty = Evaluator (\env -> Error (Obj.Error "empty Object") env)
 
 -- | set
 --
@@ -131,11 +132,13 @@ instance Node Ast.Program where
     eval = evalProgram . Ast.statements
 
 instance Node Ast.Statement where
-    eval (Ast.ExpressionStatement _ e    ) = eval e
-    eval (Ast.BlockStatement      _ stmts) = evalBlockStatement stmts
-    eval (Ast.ReturnStatement     _ e    ) = Obj.ReturnValue <$> eval e
     eval (Ast.LetStatement _ name v) =
         eval v >>= set (Ast.expValue name) >> return Obj.Void
+    eval (Ast.ReturnStatement _ e) = Obj.ReturnValue <$> eval e
+    eval (Ast.ExpressionStatement _ e) = eval e
+    eval (Ast.BlockStatement _ stmts) = evalBlockStatement stmts
+    eval (Ast.FailStatement _ s) = return $ Obj.Error s
+    eval _ = return $ Obj.Error "unknown node"
 
 instance Node Ast.Expression where
     eval (Ast.Identifire     _ v) = evalIdentifire v
