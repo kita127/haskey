@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
-import qualified Data.Map          as M
-import qualified Data.Text         as T
-import qualified Haskey.Ast        as Ast
-import qualified Haskey.Evaluator  as Evl
-import qualified Haskey.Lexer      as Lex
-import qualified Haskey.Object     as Obj
-import qualified Haskey.Parser     as Prs
+import qualified Data.Map                      as M
+import qualified Data.Text                     as T
+import qualified Haskey.Ast                    as Ast
+import qualified Haskey.Evaluator              as Evl
+import qualified Haskey.Lexer                  as Lex
+import qualified Haskey.Object                 as Obj
+import qualified Haskey.Parser                 as Prs
 import           Test.HUnit
 import           Text.RawString.QQ
 
@@ -28,7 +28,6 @@ main = do
         , testBuiltinFunctions
         , testArrayLiterals
         , testArrayIndexExpressions
-        , testBuiltinDrive
         ]
     return ()
 
@@ -45,12 +44,12 @@ _evaluator = Evl.eval . _program
 
 _object :: T.Text -> Obj.Object
 _object s = case Evl.runEvaluator (_evaluator s) Obj.newEnvironment of
-    (Evl.Done obj _)  -> obj
+    (Evl.Done  obj _) -> obj
     (Evl.Error err _) -> err
 
 _environment :: T.Text -> Either Obj.Environment Obj.Environment
 _environment s = case Evl.runEvaluator (_evaluator s) Obj.newEnvironment of
-    (Evl.Done _ e)  -> Right e
+    (Evl.Done  _ e) -> Right e
     (Evl.Error _ e) -> Left e
 
 _boolValue :: T.Text -> Bool
@@ -64,12 +63,12 @@ _evalObject :: T.Text -> Ob
 _evalObject = convOb . _object
 
 convOb :: Obj.Object -> Ob
-convOb       Obj.Null          = ObNull
-convOb       (Obj.Integer v)   = ObInt v
-convOb       (Obj.String v)    = ObStr v
-convOb       (Obj.Array es)    = ObArray (map convOb es)
-convOb       (Obj.Error   msg) = ObErr msg
-convOb       o                 = Unexpected $ show $ Obj.getObjectType o
+convOb Obj.Null          = ObNull
+convOb (Obj.Integer v  ) = ObInt v
+convOb (Obj.String  v  ) = ObStr v
+convOb (Obj.Array   es ) = ObArray (map convOb es)
+convOb (Obj.Error   msg) = ObErr msg
+convOb o                 = Unexpected $ show $ Obj.getObjectType o
 
 -- | testEvalIntegerExpression
 --
@@ -314,18 +313,11 @@ testBangOperator = TestList
 --
 testIfElseExpressions :: Test
 testIfElseExpressions = TestList
-    [ "testIfElseExpressions 1" ~: _evalObject "if (true) { 10 }" ~?= ObInt
-        10
-    , "testIfElseExpressions 2"
-    ~:  _evalObject "if (false) { 10 }"
-    ~?= ObNull
+    [ "testIfElseExpressions 1" ~: _evalObject "if (true) { 10 }" ~?= ObInt 10
+    , "testIfElseExpressions 2" ~: _evalObject "if (false) { 10 }" ~?= ObNull
     , "testIfElseExpressions 3" ~: _evalObject "if (1) { 10 }" ~?= ObInt 10
-    , "testIfElseExpressions 4"
-    ~:  _evalObject "if (1 < 2) { 10 }"
-    ~?= ObInt 10
-    , "testIfElseExpressions 5"
-    ~:  _evalObject "if (1 > 2) { 10 }"
-    ~?= ObNull
+    , "testIfElseExpressions 4" ~: _evalObject "if (1 < 2) { 10 }" ~?= ObInt 10
+    , "testIfElseExpressions 5" ~: _evalObject "if (1 > 2) { 10 }" ~?= ObNull
     , "testIfElseExpressions 6"
     ~:  _evalObject "if (1 > 2) { 10 } else { 20 }"
     ~?= ObInt 20
@@ -363,15 +355,25 @@ if (10 > 1) {
 --
 testErrorHandling :: Test
 testErrorHandling = TestList
-    [ "testErrorHandling 1" ~: _evalObject "5 + true;" ~?= ObErr "type mismatch: INTEGER + BOOLEAN"
-    , "testErrorHandling 2" ~: _evalObject "5 + true; 5;" ~?= ObErr "type mismatch: INTEGER + BOOLEAN"
-    , "testErrorHandling 3" ~: _evalObject "-true" ~?= ObErr "unknown operator: -BOOLEAN"
-    , "testErrorHandling 4" ~: _evalObject "true + false" ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
-    , "testErrorHandling 5" ~: _evalObject "5; true + false; 5" ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
-    , "testErrorHandling 6" ~: _evalObject "if (10 > 1) { true + false; }" ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
-    , "testErrorHandling 7" ~: _evalObject test7 ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
-    , "testErrorHandling 8" ~: _evalObject "foobar" ~?= ObErr "identifier not found: foobar"
-    , "testErrorHandling 9" ~: _evalObject test9 ~?= ObErr "unknown operator: STRING_OBJ - STRING_OBJ"
+    [ "testErrorHandling 1" ~: _evalObject "5 + true;" ~?= ObErr
+        "type mismatch: INTEGER + BOOLEAN"
+    , "testErrorHandling 2" ~: _evalObject "5 + true; 5;" ~?= ObErr
+        "type mismatch: INTEGER + BOOLEAN"
+    , "testErrorHandling 3" ~: _evalObject "-true" ~?= ObErr
+        "unknown operator: -BOOLEAN"
+    , "testErrorHandling 4" ~: _evalObject "true + false" ~?= ObErr
+        "unknown operator: BOOLEAN + BOOLEAN"
+    , "testErrorHandling 5" ~: _evalObject "5; true + false; 5" ~?= ObErr
+        "unknown operator: BOOLEAN + BOOLEAN"
+    , "testErrorHandling 6"
+    ~:  _evalObject "if (10 > 1) { true + false; }"
+    ~?= ObErr "unknown operator: BOOLEAN + BOOLEAN"
+    , "testErrorHandling 7" ~: _evalObject test7 ~?= ObErr
+        "unknown operator: BOOLEAN + BOOLEAN"
+    , "testErrorHandling 8" ~: _evalObject "foobar" ~?= ObErr
+        "identifier not found: foobar"
+    , "testErrorHandling 9" ~: _evalObject test9 ~?= ObErr
+        "unknown operator: STRING_OBJ - STRING_OBJ"
     ]
   where
     test7 = [r|
@@ -393,7 +395,9 @@ testLetStatement = TestList
     [ "testLetStatement 1" ~: _evalObject "let a = 5; a;" ~?= ObInt 5
     , "testLetStatement 2" ~: _evalObject "let a = 5 * 5; a;" ~?= ObInt 25
     , "testLetStatement 3" ~: _evalObject "let a = 5; let b = a; b;" ~?= ObInt 5
-    , "testLetStatement 4" ~: _evalObject "let a = 5; let b = a; let c = a + b + 5; c;" ~?= ObInt 15
+    , "testLetStatement 4"
+    ~:  _evalObject "let a = 5; let b = a; let c = a + b + 5; c;"
+    ~?= ObInt 15
     ]
 
 -- | testFunctionObject
@@ -402,8 +406,12 @@ testFunctionObject :: Test
 testFunctionObject = TestList
     [ "Is function obj? 1" ~: (isFunctionObj . _object) input1 ~?= Right True
     , "params length 1" ~: (length . Obj.parameters . _object) input1 ~?= 1
-    , "params contents 1" ~: (Ast.string . head . Obj.parameters . _object) input1 ~?= "x"
-    , "body contents 1" ~: (Ast.string . Obj.body . _object) input1 ~?= "(x + 2)"
+    , "params contents 1"
+    ~:  (Ast.string . head . Obj.parameters . _object) input1
+    ~?= "x"
+    , "body contents 1"
+    ~:  (Ast.string . Obj.body . _object) input1
+    ~?= "(x + 2)"
     ]
   where
     input1 = "fn(x) { x + 2; };"
@@ -423,16 +431,15 @@ testFunctionApplication = TestList
     , "function application 6" ~: _evalObject input6 ~?= ObInt 5
     , "closure 1" ~: _evalObject inputClosure1 ~?= ObInt 4
     , "closure 2" ~: _evalObject inputClosure2 ~?= ObInt 155
-
     , "function application 7" ~: _evalObject input7 ~?= ObInt 100
     ]
   where
-    input1 = "let identity = fn(x) { x; }; identity(5);"
-    input2 = "let identity = fn(x) { return x; }; identity(5);"
-    input3 = "let double = fn(x) { x * 2; }; double(5);"
-    input4 = "let add = fn(x, y) { x + y; }; add(5, 5);"
-    input5 = "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));"
-    input6 = "fn(x) { x; }(5)"
+    input1        = "let identity = fn(x) { x; }; identity(5);"
+    input2        = "let identity = fn(x) { return x; }; identity(5);"
+    input3        = "let double = fn(x) { x * 2; }; double(5);"
+    input4        = "let add = fn(x, y) { x + y; }; add(5, 5);"
+    input5        = "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));"
+    input6        = "fn(x) { x; }(5)"
 
     inputClosure1 = [r|
 let newAdder = fn(x) {
@@ -453,7 +460,7 @@ applyFunc(100, 55, add);
     assertEnv (Obj.Environment s o) = M.keys s ++ assertEnv o
 
     unwrap (Right e) = e
-    unwrap (Left e)  = e
+    unwrap (Left  e) = e
 
     input7 = "let fa = fn(a) { let fb = fn(b) { b + 200; }; 100; }; fa(1);"
 
@@ -461,19 +468,15 @@ applyFunc(100, 55, add);
 --
 testStringLiteral :: Test
 testStringLiteral = TestList
-    [ "string literal 1" ~: _evalObject input1 ~?= ObStr "Hello World"
-    ]
-  where
-    input1 = [r|"Hello World"|]
+    ["string literal 1" ~: _evalObject input1 ~?= ObStr "Hello World"]
+    where input1 = [r|"Hello World"|]
 
 -- | testStringConcatenation
 --
 testStringConcatenation :: Test
 testStringConcatenation = TestList
-    [ "string literal 1" ~: _evalObject input1 ~?= ObStr "Hello World!"
-    ]
-  where
-    input1 = [r|"Hello" + " " + "World!"|]
+    ["string literal 1" ~: _evalObject input1 ~?= ObStr "Hello World!"]
+    where input1 = [r|"Hello" + " " + "World!"|]
 
 
 -- | testBuiltinFunctions
@@ -483,42 +486,54 @@ testBuiltinFunctions = TestList
     [ "len 0 letter word" ~: _evalObject input1 ~?= ObInt 0
     , "len 4 letter word" ~: _evalObject input2 ~?= ObInt 4
     , "len hello world" ~: _evalObject input3 ~?= ObInt 11
-    , "len number" ~: _evalObject input4 ~?= ObErr "argument to `len` not supported, got INTEGER"
-    , "len two arguments" ~: _evalObject input5 ~?= ObErr "wrong number of arguments. got=2, want=1"
+    , "len number" ~: _evalObject input4 ~?= ObErr
+        "argument to `len` not supported, got INTEGER"
+    , "len two arguments" ~: _evalObject input5 ~?= ObErr
+        "wrong number of arguments. got=2, want=1"
     , "len 3 array literal" ~: _evalObject input6 ~?= ObInt 3
     , "len 3 array identifire" ~: _evalObject input7 ~?= ObInt 5
     , "first 1" ~: _evalObject input8 ~?= ObStr "hoge"
     , "first 2" ~: _evalObject input9 ~?= ObInt 100
-    , "first string" ~: _evalObject input10 ~?= ObErr "argument to `first` must be ARRAY, got STRING_OBJ"
+    , "first string" ~: _evalObject input10 ~?= ObErr
+        "argument to `first` must be ARRAY, got STRING_OBJ"
     , "first no elements" ~: _evalObject input11 ~?= ObNull
     , "last 1" ~: _evalObject inputLast1 ~?= ObInt 3
     , "last empty list" ~: _evalObject inputLast2 ~?= ObNull
-    , "last string" ~: _evalObject inputLast3 ~?= ObErr "argument to `last` must be ARRAY, got STRING_OBJ"
-    , "last few arguments" ~: _evalObject inputLast4 ~?= ObErr "wrong number of arguments. got=3, want=1"
-    , "rest 1" ~: _evalObject inputRest1 ~?= ObArray [ObInt 2,ObInt 3,ObInt 4,ObInt 5]
-    , "rest few arguments" ~: _evalObject inputRest2 ~?= ObErr "wrong number of arguments. got=2, want=1"
-    , "rest string" ~: _evalObject inputRest3 ~?= ObErr "argument to `rest` must be ARRAY, got STRING_OBJ"
-    , "rest 2" ~: _evalObject inputRest4 ~?= ObArray [ObInt 6,ObInt 7]
+    , "last string" ~: _evalObject inputLast3 ~?= ObErr
+        "argument to `last` must be ARRAY, got STRING_OBJ"
+    , "last few arguments" ~: _evalObject inputLast4 ~?= ObErr
+        "wrong number of arguments. got=3, want=1"
+    , "rest 1" ~: _evalObject inputRest1 ~?= ObArray
+        [ObInt 2, ObInt 3, ObInt 4, ObInt 5]
+    , "rest few arguments" ~: _evalObject inputRest2 ~?= ObErr
+        "wrong number of arguments. got=2, want=1"
+    , "rest string" ~: _evalObject inputRest3 ~?= ObErr
+        "argument to `rest` must be ARRAY, got STRING_OBJ"
+    , "rest 2" ~: _evalObject inputRest4 ~?= ObArray [ObInt 6, ObInt 7]
     , "rest empty list" ~: _evalObject inputRest5 ~?= ObNull
-    , "push 1" ~: _evalObject inputPush1 ~?= ObArray [ObInt 1, ObInt 2, ObInt 3, ObInt 4, ObInt 5]
+    , "push 1" ~: _evalObject inputPush1 ~?= ObArray
+        [ObInt 1, ObInt 2, ObInt 3, ObInt 4, ObInt 5]
     , "push 2" ~: _evalObject inputPush2 ~?= ObArray [ObInt 1, ObInt 2, ObInt 3]
-    , "push 3" ~: _evalObject inputPush3 ~?= ObArray [ObInt 1, ObInt 2, ObInt 3, ObInt 5]
+    , "push 3" ~: _evalObject inputPush3 ~?= ObArray
+        [ObInt 1, ObInt 2, ObInt 3, ObInt 5]
     , "push 4" ~: _evalObject inputPush4 ~?= ObArray [ObStr "hoge"]
-    , "push not 2 arguments 1" ~: _evalObject inputPush5 ~?= ObErr "wrong number of arguments. got=1, want=2"
-    , "push not 2 arguments 2" ~: _evalObject inputPush6 ~?= ObErr "wrong number of arguments. got=0, want=2"
+    , "push not 2 arguments 1" ~: _evalObject inputPush5 ~?= ObErr
+        "wrong number of arguments. got=1, want=2"
+    , "push not 2 arguments 2" ~: _evalObject inputPush6 ~?= ObErr
+        "wrong number of arguments. got=0, want=2"
     ]
   where
-    input1 = [r|len("")|]
-    input2 = [r|len("four")|]
-    input3 = [r|len("hello world")|]
-    input4 = [r|len(1)|]
-    input5 = [r|len("one", "two")|]
-    input6 = [r|len([1, 2, 3])|]
-    input7 = [r|let myArray = [1, 2, 3, 4, 5];len(myArray);|]
-    input8 = [r|first(["hoge", 3, "fuga"])|]
-    input9 = [r|first([100])|]
-    input10 = [r|first("abcde")|]
-    input11 = [r|first([])|]
+    input1     = [r|len("")|]
+    input2     = [r|len("four")|]
+    input3     = [r|len("hello world")|]
+    input4     = [r|len(1)|]
+    input5     = [r|len("one", "two")|]
+    input6     = [r|len([1, 2, 3])|]
+    input7     = [r|let myArray = [1, 2, 3, 4, 5];len(myArray);|]
+    input8     = [r|first(["hoge", 3, "fuga"])|]
+    input9     = [r|first([100])|]
+    input10    = [r|first("abcde")|]
+    input11    = [r|first([])|]
     inputLast1 = [r|last([1,2,3])|]
     inputLast2 = [r|last([])|]
     inputLast3 = [r|last("hoge")|]
@@ -539,10 +554,10 @@ testBuiltinFunctions = TestList
 --
 testArrayLiterals :: Test
 testArrayLiterals = TestList
-    [ "test array literals 1" ~: _evalObject input1 ~?= ObArray [ObInt 1, ObInt 4, ObInt 6]
+    [ "test array literals 1" ~: _evalObject input1 ~?= ObArray
+          [ObInt 1, ObInt 4, ObInt 6]
     ]
-  where
-    input1 = "[1, 2 * 2, 3 + 3]"
+    where input1 = "[1, 2 * 2, 3 + 3]"
 
 
 -- | testArrayIndexExpressions
@@ -552,40 +567,24 @@ testArrayIndexExpressions = TestList
     [ "test array index expressions 1" ~: _evalObject "[1, 2, 3][0]" ~?= ObInt 1
     , "test array index expressions 2" ~: _evalObject "[1, 2, 3][1]" ~?= ObInt 2
     , "test array index expressions 3" ~: _evalObject "[1, 2, 3][2]" ~?= ObInt 3
-    , "test array index expressions 4" ~: _evalObject "let i = 0; [1][i]" ~?= ObInt 1
-    , "test array index expressions 5" ~: _evalObject "[1, 2, 3][1 + 1]" ~?= ObInt 3
-    , "test array index expressions 6" ~: _evalObject "let myArray = [1, 2, 3]; myArray[2]" ~?= ObInt 3
-    , "test array index expressions 7" ~: _evalObject "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2]" ~?= ObInt 6
-    , "test array index expressions 8" ~: _evalObject "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]" ~?= ObInt 2
+    , "test array index expressions 4"
+    ~:  _evalObject "let i = 0; [1][i]"
+    ~?= ObInt 1
+    , "test array index expressions 5"
+    ~:  _evalObject "[1, 2, 3][1 + 1]"
+    ~?= ObInt 3
+    , "test array index expressions 6"
+    ~:  _evalObject "let myArray = [1, 2, 3]; myArray[2]"
+    ~?= ObInt 3
+    , "test array index expressions 7"
+    ~:  _evalObject
+            "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2]"
+    ~?= ObInt 6
+    , "test array index expressions 8"
+    ~:  _evalObject "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]"
+    ~?= ObInt 2
     , "test array index expressions 9" ~: _evalObject "[1, 2, 3][3]" ~?= ObNull
-    , "test array index expressions 10" ~: _evalObject "[1, 2, 3][-1]" ~?= ObNull
+    , "test array index expressions 10"
+    ~:  _evalObject "[1, 2, 3][-1]"
+    ~?= ObNull
     ]
-
-
--- | testBuiltinDrive
---
-testBuiltinDrive :: Test
-testBuiltinDrive = TestList
-    [ --"test program sample function" ~: _evalObject inputSample ~?= ObInt 101
-    --, "test program map function" ~: _evalObject inputMap ~?= ObArray [ObInt 2, ObInt 4, ObInt 6, ObInt 8]
-    ]
-  where
-    inputSample = [r| let add = fn(arg) { fn(arg2) { arg2 + 200; }; 100; }; add(1); |]
--- map function source
-    inputMap = [r|
-let map = fn(arr, f) {
-    let iter = fn(arr, accumulated) {
-        if (len(arr) == 0) {
-            accumulated
-        } else {
-            iter(rest(arr), push(accumulated, f(first(arr))));
-        }
-    };
-
-    iter(arr, []);
-};
-
-let a = [1, 2, 3, 4];
-let double = fn(x) { x * 2 };
-map(a, double);
-|]
