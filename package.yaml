@@ -86,3 +86,16 @@ tests:
     - raw-strings-qq
     - text
     - containers
+  advance:
+    main:                TestAdvanced.hs
+    source-dirs:         test/TestAdvanced
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - haskey
+    - HUnit
+    - raw-strings-qq
+    - text
+    - containers

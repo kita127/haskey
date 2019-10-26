@@ -423,6 +423,8 @@ testFunctionApplication = TestList
     , "function application 6" ~: _evalObject input6 ~?= ObInt 5
     , "closure 1" ~: _evalObject inputClosure1 ~?= ObInt 4
     , "closure 2" ~: _evalObject inputClosure2 ~?= ObInt 155
+
+    , "function application 7" ~: _evalObject input7 ~?= ObInt 100
     ]
   where
     input1 = "let identity = fn(x) { x; }; identity(5);"
@@ -452,6 +454,8 @@ applyFunc(100, 55, add);
 
     unwrap (Right e) = e
     unwrap (Left e)  = e
+
+    input7 = "let fa = fn(a) { let fb = fn(b) { b + 200; }; 100; }; fa(1);"
 
 -- | testStringLiteral
 --
