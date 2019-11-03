@@ -6,8 +6,8 @@ module Haskey.Object
     , inspect
     , getObjectType
     , newEnvironment
-    , newEnclosedEnvironment
     , BuiltinFunction(..)
+    , newEnclosedEnvironment
     )
 where
 
@@ -81,11 +81,13 @@ data Environment = Environment {
 newEnvironment :: Environment
 newEnvironment = Environment (M.fromList []) NothingEnv
 
+
 -- | newEnclosedEnvironment
 --
-newEnclosedEnvironment :: M.Map T.Text Object -> Environment -> Environment
-newEnclosedEnvironment = Environment
-
+newEnclosedEnvironment :: Environment -> Environment -> Environment
+newEnclosedEnvironment e@(Environment _ o) outerEnv =
+    e { outer = newEnclosedEnvironment o outerEnv }
+newEnclosedEnvironment NothingEnv outerEnv = outerEnv
 
 -- | inspect
 --

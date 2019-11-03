@@ -28,6 +28,7 @@ main = do
         , testBuiltinFunctions
         , testArrayLiterals
         , testArrayIndexExpressions
+        , testEnviroment
         ]
     return ()
 
@@ -35,8 +36,17 @@ main = do
 data Ob = ObInt Integer | ObStr T.Text | ObNull | ObArray [Ob] | ObErr String| Unexpected String
     deriving (Eq, Show)
 
--- | support
+-- | helper
 --
+
+tEnv :: T.Text -> Either String Obj.Environment
+tEnv s = case Evl.runEvaluator (ev s) Obj.newEnvironment of
+    (Evl.Done  _   env) -> Right env
+    (Evl.Error err _  ) -> Left $ show err
+    where ev = Evl.eval . Prs.parse . Lex.lexicalize
+
+
+
 _program :: T.Text -> Ast.Program
 _program = Prs.parse . Lex.lexicalize
 
@@ -432,6 +442,8 @@ testFunctionApplication = TestList
     , "closure 1" ~: _evalObject inputClosure1 ~?= ObInt 4
     , "closure 2" ~: _evalObject inputClosure2 ~?= ObInt 155
     , "function application 7" ~: _evalObject input7 ~?= ObInt 100
+    , "function application 8" ~: _evalObject input8 ~?= ObInt 101
+    , "function recursion 1" ~: _evalObject input9 ~?= ObInt 0
     ]
   where
     input1        = "let identity = fn(x) { x; }; identity(5);"
@@ -463,6 +475,17 @@ applyFunc(100, 55, add);
     unwrap (Left  e) = e
 
     input7 = "let fa = fn(a) { let fb = fn(b) { b + 200; }; 100; }; fa(1);"
+    input8 = "let fa = fn(a) { let fb = fn(b) { b + 100; }; fb(a); }; fa(1);"
+    input9 = [r|
+let func = fn(a) {
+    if (a < 0) {
+        return 0;
+    } else {
+        func(a - 1);
+    }
+};
+func(10);
+|]
 
 -- | testStringLiteral
 --
@@ -588,3 +611,25 @@ testArrayIndexExpressions = TestList
     ~:  _evalObject "[1, 2, 3][-1]"
     ~?= ObNull
     ]
+
+-- | testEnviroment
+--
+testEnviroment :: Test
+testEnviroment = TestList
+    ["test environment 1" ~: helper input1 ~?= Right ["func"]]
+  where
+    helper s = do
+        e <- tEnv s
+        let ks = M.keys (Obj.store e)
+        return ks
+
+    input1 = [r|
+let func = fn(a) {
+    if (a < 0) {
+        return 0;
+    } else {
+        func(a - 1);
+    }
+};
+func(10);
+|]

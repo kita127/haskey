@@ -314,9 +314,13 @@ applyFunction function args =
 userFunction :: Obj.Object -> [Obj.Object] -> Evaluator Obj.Object
 userFunction function args = do
     expectObj Obj.FUNCTION function
+    currentEnv <- getEnv
     let params =
             M.fromList $ zip (map Ast.expValue . Obj.parameters $ function) args
-        extendEnv = Obj.newEnclosedEnvironment params (Obj.env function)
+-- 関数のパラメータと関数が持つ環境で新たな環境を作成
+-- 新たな環境に現在の最新の環境を閉じ込める
+        newEnv    = Obj.Environment params (Obj.env function)
+        extendEnv = Obj.newEnclosedEnvironment newEnv currentEnv
     evaluated <- evalInExtendEnv (Obj.body function) extendEnv
     return $ unwrapReturnValue evaluated
 

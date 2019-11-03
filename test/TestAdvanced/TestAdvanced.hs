@@ -13,13 +13,76 @@ import           Text.RawString.QQ
 
 main :: IO ()
 main = do
-    runTestTT $ TestList [testSample]
+    runTestTT $ TestList [testSample, testAdvanced, testMapFunction]
     return ()
 
 
+-- | helper
+--
+tEval :: T.Text -> Either String Obj.Object
+tEval s = case Evl.runEvaluator (e s) Obj.newEnvironment of
+    (Evl.Done  obj _) -> Right obj
+    (Evl.Error err _) -> Left $ show err
+    where e = Evl.eval . Prs.parse . Lex.lexicalize
 
--- | testEvalIntegerExpression
+tArrayObject :: Obj.Object -> Either String Obj.Object
+tArrayObject o@(Obj.Array{}) = Right o
+tArrayObject x               = Left $ show x
+
+tInteger :: Obj.Object -> Either String Integer
+tInteger (Obj.Integer v) = Right v
+tInteger x               = Left $ show x
+
+
+-- | testSample
 --
 testSample :: Test
 testSample = TestList ["test sample" ~: "5" ~?= "5"]
+
+-- | testAdvanced
+--
+testAdvanced :: Test
+testAdvanced = TestList ["test addvanced " ~: helper input1 ~?= Right 0]
   where
+    input1 = [r|
+let funca = fn(a) {
+    if (a < 0) {
+        return 0;
+    } else {
+        funca(a - 1);
+    }
+};
+funca(10);
+|]
+
+    helper s = do
+        o <- tEval s
+        tInteger o
+
+-- | testMapFunction
+--
+testMapFunction :: Test
+testMapFunction = TestList
+    ["test map function" ~: helper input1 ~?= Right [2, 4, 6, 8]]
+  where
+    input1 = [r|
+let map = fn(arr, f) {
+    let iter = fn(arr, accumlated) {
+        if (len(arr) == 0) {
+            accumlated
+        } else {
+            iter(rest(arr), push(accumlated, f(first(arr))));
+        }
+    };
+
+    iter(arr, []);
+};
+let a = [1, 2, 3, 4];
+let double = fn(x) { x * 2 };
+map(a, double);
+|]
+
+    helper s = do
+        o   <- tEval s
+        arr <- tArrayObject o
+        mapM tInteger $ Obj.elements arr
