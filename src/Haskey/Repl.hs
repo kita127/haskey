@@ -9,10 +9,9 @@ import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as TIO
 import qualified Haskey.Ast                    as Ast
 import           Haskey.Evaluator              as Evl
-import           Haskey.Lexer
+import qualified Haskey.Lexer                  as Lex
 import           Haskey.Object                 as Obj
-import           Haskey.Parser
-import qualified Haskey.Token                  as Tok
+import qualified Haskey.Parser                 as Prs
 import           System.IO
 import           Text.RawString.QQ
 
@@ -27,8 +26,6 @@ prompt = do
     hFlush stdout
     return ()
 
-
-
 -- | start
 --
 -- TODO:
@@ -39,27 +36,56 @@ start :: IO ()
 start = do
     greet
     loop Obj.newEnvironment
+
+-- | loop
+--
+loop :: Obj.Environment -> IO ()
+loop e = do
+    prompt
+    l <- TIO.getLine
+    let (out, newEnv) = unwrapInterpreted e $ interprete l e
+    TIO.putStr out
+    loop newEnv
+
+-- | unwrapInterpreted
+--
+unwrapInterpreted
+    :: Obj.Environment
+    -> Either T.Text (T.Text, Obj.Environment)
+    -> (T.Text, Obj.Environment)
+unwrapInterpreted e (Left  s  ) = (s, e)
+unwrapInterpreted _ (Right res) = res
+
+-- | interprete
+--
+interprete
+    :: T.Text -> Obj.Environment -> Either T.Text (T.Text, Obj.Environment)
+interprete s e = do
+    let prg = Prs.parse $ Lex.lexicalize s
+    checkSyntax prg
+    run prg e
+
+-- | run
+--
+run :: Ast.Program -> Obj.Environment -> Either T.Text (T.Text, Obj.Environment)
+run prg e = do
+    let (object, newEnv) = case Evl.runEvaluator (Evl.eval prg) e of
+            (Evl.Done  o e') -> (o, e')
+            (Evl.Error o e') -> (o, e')
+        out = if object /= Obj.Void
+            then Obj.inspect object <> "\n"
+            else Obj.inspect object
+    return (out, newEnv)
+
+-- | checkSyntax
+--
+checkSyntax :: Ast.Program -> Either T.Text Ast.Program
+checkSyntax prg = if hasError prg
+    then Left (chobiFace <> "\n" <> errContents <> "\n")
+    else Right prg
   where
-    loop env = do
-        prompt
-        l <- TIO.getLine
-        let prg = (parse . lexicalize) l
-
-        if hasError prg
-            then do
-                printParseError prg
-                loop env
-            else do
-                let (obj, env') =
-                        (case Evl.runEvaluator (Evl.eval prg) env of
-                            (Evl.Done  obj env') -> (obj, env')
-                            (Evl.Error obj env') -> (obj, env')
-                        )
-                if obj /= Obj.Void
-                    then TIO.putStrLn $ Obj.inspect obj
-                    else return ()
-                loop env'
-
+    errContents =
+        T.intercalate "\t" . map Ast.string . Ast.extractFailers $ prg
 
 greet :: IO ()
 greet = TIO.putStrLn greeting
@@ -71,19 +97,15 @@ hasError = not . null . Ast.extractFailers
 
 
 
-
--- | printParseError
+-- | greeting
 --
-printParseError :: Ast.Program -> IO ()
-printParseError prg = do
-    TIO.putStrLn chobiFace
-    mapM_ (TIO.putStrLn . ("\t" <>) . Ast.string) . Ast.extractFailers $ prg
-
 greeting :: T.Text
 greeting = [r|Hello! This is the Haskey programming language!
 Feel free to type in commands
 Usage: haskey --help|]
 
+-- | chobiFace
+--
 chobiFace :: T.Text
 chobiFace = [r|
 　　　　　　 r‐..、　　　　 　　　　　　　　　　　　,,,,
