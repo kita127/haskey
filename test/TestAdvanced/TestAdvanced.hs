@@ -13,7 +13,8 @@ import           Text.RawString.QQ
 
 main :: IO ()
 main = do
-    runTestTT $ TestList [testSample, testAdvanced, testMapFunction]
+    runTestTT $ TestList
+        [testSample, testAdvanced, testMapFunction, testReduceAndSum]
     return ()
 
 
@@ -86,3 +87,33 @@ map(a, double);
         o   <- tEval s
         arr <- tArrayObject o
         mapM tInteger $ Obj.elements arr
+
+
+-- | testReduceAndSum
+--
+testReduceAndSum :: Test
+testReduceAndSum = TestList
+    ["test reduce and sum function" ~: helper input1 ~?= Right 15]
+  where
+    input1 = [r|
+let reduce = fn(arr, initial, f) {
+    let iter = fn(arr, result) {
+        if (len(arr) == 0) {
+            result
+        } else {
+            iter(rest(arr), f(result, first(arr)));
+        }
+    };
+    iter(arr, initial);
+};
+
+let sum = fn(arr) {
+    reduce(arr, 0, fn(initial, el) { initial + el });
+};
+
+sum([1, 2, 3, 4, 5]);
+|]
+
+    helper s = do
+        o <- tEval s
+        tInteger o
