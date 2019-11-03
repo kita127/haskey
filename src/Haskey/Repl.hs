@@ -68,14 +68,12 @@ interprete s e = do
 -- | run
 --
 run :: Ast.Program -> Obj.Environment -> Either T.Text (T.Text, Obj.Environment)
-run prg e = do
-    let (object, newEnv) = case Evl.runEvaluator (Evl.eval prg) e of
-            (Evl.Done  o e') -> (o, e')
-            (Evl.Error o e') -> (o, e')
-        out = if object /= Obj.Void
-            then Obj.inspect object <> "\n"
-            else Obj.inspect object
-    return (out, newEnv)
+run prg e = case Evl.runEvaluator (Evl.eval prg) e of
+    (Evl.Done o e') -> do
+        let out =
+                if o /= Obj.Void then Obj.inspect o <> "\n" else Obj.inspect o
+        return (out, e')
+    (Evl.Error o _) -> Left (Obj.inspect o <> "\n")
 
 -- | checkSyntax
 --
