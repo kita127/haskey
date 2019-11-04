@@ -15,6 +15,18 @@ import qualified Haskey.Parser                 as Prs
 import           System.IO
 import           Text.RawString.QQ
 
+
+-- | start
+--
+-- TODO:
+-- ファイルハンドルは main が任意のものを渡し、start は標準入出力以外にも
+-- 対応できるようにする
+--
+start :: Handle -> Handle -> Handle -> IO ()
+start hIn hOut hErr = do
+    greet hOut
+    loop hIn hOut hErr Obj.newEnvironment
+
 -- | prompt
 --
 -- 出力は改行が来るまでバッファリングされるため
@@ -26,35 +38,24 @@ prompt hOut = do
     hFlush hOut
     return ()
 
--- | start
---
--- TODO:
--- ファイルハンドルは main が任意のものを渡し、start は標準入出力以外にも
--- 対応できるようにする
---
-start :: Handle -> Handle -> IO ()
-start hIn hOut = do
-    greet hOut
-    loop hIn hOut Obj.newEnvironment
-
 -- | loop
 --
-loop :: Handle -> Handle -> Obj.Environment -> IO ()
-loop hIn hOut e = do
+loop :: Handle -> Handle -> Handle -> Obj.Environment -> IO ()
+loop hIn hOut hErr e = do
     prompt hOut
     l <- TIO.hGetLine hIn
-    let (res, newEnv) = unwrapInterpreted e $ interprete l e
-    TIO.hPutStr hOut res
-    loop hIn hOut newEnv
+    let res = unwrapInterpreted e $ interprete l e
+    putResult hOut hErr res
+    loop hIn hOut hErr $ fetchEnv res
 
 -- | unwrapInterpreted
 --
 unwrapInterpreted
     :: Obj.Environment
     -> Either T.Text (T.Text, Obj.Environment)
-    -> (T.Text, Obj.Environment)
-unwrapInterpreted e (Left  s  ) = (s, e)
-unwrapInterpreted _ (Right res) = res
+    -> Either (T.Text, Obj.Environment) (T.Text, Obj.Environment)
+unwrapInterpreted e (Left  s  ) = Left (s, e)
+unwrapInterpreted _ (Right res) = Right res
 
 -- | interprete
 --
@@ -85,6 +86,28 @@ checkSyntax prg = if hasError prg
     errContents =
         T.intercalate "\t" . map Ast.string . Ast.extractFailers $ prg
 
+-- | putResult
+--
+putResult
+    :: Handle
+    -> Handle
+    -> Either (T.Text, Obj.Environment) (T.Text, Obj.Environment)
+    -> IO ()
+putResult hOut _    (Right (s, _)) = TIO.hPutStr hOut s
+putResult _    hErr (Left  (s, _)) = TIO.hPutStr hErr s
+
+-- | fetchEnv
+--
+fetchEnv
+    :: Either (T.Text, Obj.Environment) (T.Text, Obj.Environment)
+    -> Obj.Environment
+fetchEnv (Right (_, e)) = e
+fetchEnv (Left  (_, e)) = e
+
+
+
+-- | greet
+--
 greet :: Handle -> IO ()
 greet hOut = TIO.hPutStrLn hOut greeting
 
