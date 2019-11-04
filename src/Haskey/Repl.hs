@@ -20,10 +20,10 @@ import           Text.RawString.QQ
 -- 出力は改行が来るまでバッファリングされるため
 -- hFlush する必要がある
 --
-prompt :: IO ()
-prompt = do
-    putStr ">> "
-    hFlush stdout
+prompt :: Handle -> IO ()
+prompt hOut = do
+    hPutStr hOut ">> "
+    hFlush hOut
     return ()
 
 -- | start
@@ -32,20 +32,20 @@ prompt = do
 -- ファイルハンドルは main が任意のものを渡し、start は標準入出力以外にも
 -- 対応できるようにする
 --
-start :: IO ()
-start = do
-    greet
-    loop Obj.newEnvironment
+start :: Handle -> Handle -> IO ()
+start hIn hOut = do
+    greet hOut
+    loop hIn hOut Obj.newEnvironment
 
 -- | loop
 --
-loop :: Obj.Environment -> IO ()
-loop e = do
-    prompt
-    l <- TIO.getLine
-    let (out, newEnv) = unwrapInterpreted e $ interprete l e
-    TIO.putStr out
-    loop newEnv
+loop :: Handle -> Handle -> Obj.Environment -> IO ()
+loop hIn hOut e = do
+    prompt hOut
+    l <- TIO.hGetLine hIn
+    let (res, newEnv) = unwrapInterpreted e $ interprete l e
+    TIO.hPutStr hOut res
+    loop hIn hOut newEnv
 
 -- | unwrapInterpreted
 --
@@ -85,8 +85,8 @@ checkSyntax prg = if hasError prg
     errContents =
         T.intercalate "\t" . map Ast.string . Ast.extractFailers $ prg
 
-greet :: IO ()
-greet = TIO.putStrLn greeting
+greet :: Handle -> IO ()
+greet hOut = TIO.hPutStrLn hOut greeting
 
 -- | hasError
 --
