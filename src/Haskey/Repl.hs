@@ -16,6 +16,8 @@ import           System.IO
 import           Text.RawString.QQ
 
 
+type RetEnv = (T.Text, Obj.Environment)
+
 -- | start
 --
 -- TODO:
@@ -44,43 +46,33 @@ loop :: Handle -> Handle -> Handle -> Obj.Environment -> IO ()
 loop hIn hOut hErr e = do
     prompt hOut
     l <- TIO.hGetLine hIn
-    let res = unwrapInterpreted e $ interprete l e
+    let res = interprete l e
     putResult hOut hErr res
     loop hIn hOut hErr $ fetchEnv res
 
--- | unwrapInterpreted
---
-unwrapInterpreted
-    :: Obj.Environment
-    -> Either T.Text (T.Text, Obj.Environment)
-    -> Either (T.Text, Obj.Environment) (T.Text, Obj.Environment)
-unwrapInterpreted e (Left  s  ) = Left (s, e)
-unwrapInterpreted _ (Right res) = Right res
-
 -- | interprete
 --
-interprete
-    :: T.Text -> Obj.Environment -> Either T.Text (T.Text, Obj.Environment)
+interprete :: T.Text -> Obj.Environment -> Either RetEnv RetEnv
 interprete s e = do
     let prg = Prs.parse $ Lex.lexicalize s
-    checkSyntax prg
+    checkSyntax prg e
     run prg e
 
 -- | run
 --
-run :: Ast.Program -> Obj.Environment -> Either T.Text (T.Text, Obj.Environment)
+run :: Ast.Program -> Obj.Environment -> Either RetEnv RetEnv
 run prg e = case Evl.runEvaluator (Evl.eval prg) e of
     (Evl.Done o e') -> do
         let out =
                 if o /= Obj.Void then Obj.inspect o <> "\n" else Obj.inspect o
         return (out, e')
-    (Evl.Error o _) -> Left (Obj.inspect o <> "\n")
+    (Evl.Error o e') -> Left (Obj.inspect o <> "\n", e')
 
 -- | checkSyntax
 --
-checkSyntax :: Ast.Program -> Either T.Text Ast.Program
-checkSyntax prg = if hasError prg
-    then Left (chobiFace <> "\n" <> errContents <> "\n")
+checkSyntax :: Ast.Program -> Obj.Environment -> Either RetEnv Ast.Program
+checkSyntax prg e = if hasError prg
+    then Left (chobiFace <> "\n" <> errContents <> "\n", e)
     else Right prg
   where
     errContents =
@@ -88,19 +80,13 @@ checkSyntax prg = if hasError prg
 
 -- | putResult
 --
-putResult
-    :: Handle
-    -> Handle
-    -> Either (T.Text, Obj.Environment) (T.Text, Obj.Environment)
-    -> IO ()
+putResult :: Handle -> Handle -> Either RetEnv RetEnv -> IO ()
 putResult hOut _    (Right (s, _)) = TIO.hPutStr hOut s
 putResult _    hErr (Left  (s, _)) = TIO.hPutStr hErr s
 
 -- | fetchEnv
 --
-fetchEnv
-    :: Either (T.Text, Obj.Environment) (T.Text, Obj.Environment)
-    -> Obj.Environment
+fetchEnv :: Either RetEnv RetEnv -> Obj.Environment
 fetchEnv (Right (_, e)) = e
 fetchEnv (Left  (_, e)) = e
 
