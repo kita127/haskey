@@ -49,5 +49,5 @@ main :: IO ()
 main = do
     options <- execParser parserInfo
     if null (args options)
-        then start stdin stdout stderr
+        then start stdin stdout stdout
         else execute $ head $ args options
