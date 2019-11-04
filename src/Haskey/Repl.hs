@@ -15,16 +15,8 @@ import qualified Haskey.Parser                 as Prs
 import           System.IO
 import           Text.RawString.QQ
 
--- | prompt
---
--- 出力は改行が来るまでバッファリングされるため
--- hFlush する必要がある
---
-prompt :: IO ()
-prompt = do
-    putStr ">> "
-    hFlush stdout
-    return ()
+
+type RetEnv = (T.Text, Obj.Environment)
 
 -- | start
 --
@@ -32,61 +24,78 @@ prompt = do
 -- ファイルハンドルは main が任意のものを渡し、start は標準入出力以外にも
 -- 対応できるようにする
 --
-start :: IO ()
-start = do
-    greet
-    loop Obj.newEnvironment
+start :: Handle -> Handle -> Handle -> IO ()
+start hIn hOut hErr = do
+    greet hOut
+    loop hIn hOut hErr Obj.newEnvironment
+
+-- | prompt
+--
+-- 出力は改行が来るまでバッファリングされるため
+-- hFlush する必要がある
+--
+prompt :: Handle -> IO ()
+prompt hOut = do
+    hPutStr hOut ">> "
+    hFlush hOut
+    return ()
 
 -- | loop
 --
-loop :: Obj.Environment -> IO ()
-loop e = do
-    prompt
-    l <- TIO.getLine
-    let (out, newEnv) = unwrapInterpreted e $ interprete l e
-    TIO.putStr out
-    loop newEnv
-
--- | unwrapInterpreted
---
-unwrapInterpreted
-    :: Obj.Environment
-    -> Either T.Text (T.Text, Obj.Environment)
-    -> (T.Text, Obj.Environment)
-unwrapInterpreted e (Left  s  ) = (s, e)
-unwrapInterpreted _ (Right res) = res
+loop :: Handle -> Handle -> Handle -> Obj.Environment -> IO ()
+loop hIn hOut hErr e = do
+    prompt hOut
+    l <- TIO.hGetLine hIn
+    let res = interprete l e
+    putResult hOut hErr res
+    loop hIn hOut hErr $ fetchEnv res
 
 -- | interprete
 --
-interprete
-    :: T.Text -> Obj.Environment -> Either T.Text (T.Text, Obj.Environment)
+interprete :: T.Text -> Obj.Environment -> Either RetEnv RetEnv
 interprete s e = do
     let prg = Prs.parse $ Lex.lexicalize s
-    checkSyntax prg
+    checkSyntax prg e
     run prg e
 
 -- | run
 --
-run :: Ast.Program -> Obj.Environment -> Either T.Text (T.Text, Obj.Environment)
+run :: Ast.Program -> Obj.Environment -> Either RetEnv RetEnv
 run prg e = case Evl.runEvaluator (Evl.eval prg) e of
     (Evl.Done o e') -> do
         let out =
                 if o /= Obj.Void then Obj.inspect o <> "\n" else Obj.inspect o
         return (out, e')
-    (Evl.Error o _) -> Left (Obj.inspect o <> "\n")
+    (Evl.Error o e') -> Left (Obj.inspect o <> "\n", e')
 
 -- | checkSyntax
 --
-checkSyntax :: Ast.Program -> Either T.Text Ast.Program
-checkSyntax prg = if hasError prg
-    then Left (chobiFace <> "\n" <> errContents <> "\n")
+checkSyntax :: Ast.Program -> Obj.Environment -> Either RetEnv Ast.Program
+checkSyntax prg e = if hasError prg
+    then Left (chobiFace <> "\n" <> errContents <> "\n", e)
     else Right prg
   where
     errContents =
         T.intercalate "\t" . map Ast.string . Ast.extractFailers $ prg
 
-greet :: IO ()
-greet = TIO.putStrLn greeting
+-- | putResult
+--
+putResult :: Handle -> Handle -> Either RetEnv RetEnv -> IO ()
+putResult hOut _    (Right (s, _)) = TIO.hPutStr hOut s
+putResult _    hErr (Left  (s, _)) = TIO.hPutStr hErr s
+
+-- | fetchEnv
+--
+fetchEnv :: Either RetEnv RetEnv -> Obj.Environment
+fetchEnv (Right (_, e)) = e
+fetchEnv (Left  (_, e)) = e
+
+
+
+-- | greet
+--
+greet :: Handle -> IO ()
+greet hOut = TIO.hPutStrLn hOut greeting
 
 -- | hasError
 --

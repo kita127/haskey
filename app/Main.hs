@@ -1,9 +1,12 @@
 module Main where
 
-import           Data.Text.IO        as TIO
 import           Haskey.Repl
 import           Haskey.Executor
 import           Options.Applicative
+import           System.IO                      ( stdin
+                                                , stdout
+                                                , stderr
+                                                )
 
 
 
@@ -19,21 +22,21 @@ description =
     "Haskey is a programming language written in Haskell. If you don't enter any commands, repl runs."
 
 myOpt :: Parser Option
-myOpt = Option
-    <$> argOption
+myOpt = Option <$> argOption
 --  <*> hogeOption
-    where
-        argOption :: Parser [String]
-        argOption = many $ strArgument
-            $ help "input files"
-            <> metavar "FILE"
-            <> action "file"        -- bash に補完をおまかせする
+
+
+
+  where
+    argOption :: Parser [String]
+    argOption =
+        many $ strArgument $ help "input files" <> metavar "FILE" <> action
+            "file"        -- bash に補完をおまかせする
 
 parserInfo :: ParserInfo Option
-parserInfo = info (helper <*> myOpt)
-    $  fullDesc
-    <> progDesc description
-    <> header "Haskey programming language"
+parserInfo =
+    info (helper <*> myOpt) $ fullDesc <> progDesc description <> header
+        "Haskey programming language"
 
 -----------------------------------------------------------------------
 
@@ -46,5 +49,5 @@ main :: IO ()
 main = do
     options <- execParser parserInfo
     if null (args options)
-    then start
-    else execute $ head $ args options
+        then start stdin stdout stdout
+        else execute $ head $ args options
