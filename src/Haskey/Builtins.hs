@@ -18,6 +18,7 @@ builtins = M.fromList
     , ("last" , wrap bLast)
     , ("rest" , wrap bRest)
     , ("push" , wrap bPush)
+    , ("puts" , wrap bPuts)
     ]
 
 -- | wrapBf
@@ -94,3 +95,9 @@ bPush [a1, a2] = case Obj.getObjectType a1 of
             $ Obj.getObjectType a1
 bPush args =
     Obj.Error $ printf "wrong number of arguments. got=%d, want=2" $ length args
+
+-- | bPuts
+--
+bPuts :: [Obj.Object] -> Obj.Object
+bPuts xs = Obj.IO txt Obj.Null
+    where txt = T.intercalate "\n" . map Obj.inspect $ xs

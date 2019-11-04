@@ -21,9 +21,9 @@ main = do
 -- | helper
 --
 tEval :: T.Text -> Either String Obj.Object
-tEval s = case Evl.runEvaluator (e s) Obj.newEnvironment of
-    (Evl.Done  obj _) -> Right obj
-    (Evl.Error err _) -> Left $ show err
+tEval s = case Evl.runEvaluator (e s) (Obj.newEnvironment, "") of
+    (Evl.Done obj _ _) -> Right obj
+    (Evl.Error err _ ) -> Left $ show err
     where e = Evl.eval . Prs.parse . Lex.lexicalize
 
 tArrayObject :: Obj.Object -> Either String Obj.Object

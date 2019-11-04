@@ -3,6 +3,7 @@ module Haskey.Evaluator
     ( eval
     , runEvaluator
     , Result(..)
+    , Buffer
     )
 where
 
@@ -22,58 +23,62 @@ import qualified Haskey.Builtins               as Blt
 
 -----------------------------------------------------------------------------
 
-newtype Evaluator a = Evaluator {runEvaluator :: Obj.Environment -> Result a}
+newtype Evaluator a = Evaluator {runEvaluator :: (Obj.Environment, Buffer) -> Result a}
 
-data Result a = Done a Obj.Environment
+-- | 出力する結果を格納するバッファ
+--
+type Buffer = T.Text
+
+data Result a = Done a Obj.Environment Buffer
             | Error Obj.Object Obj.Environment
     deriving (Eq, Show)
 
 instance Functor Evaluator where
    -- fmap :: (a -> b) -> f a -> f b
     fmap f evalutor = Evaluator
-        (\env -> case runEvaluator evalutor env of
+        (\input -> case runEvaluator evalutor input of
             (Error obj env') -> Error obj env'
-            (Done  a   env') -> Done (f a) env'
+            (Done a env' b ) -> Done (f a) env' b
         )
 
 instance Applicative Evaluator where
    -- pure :: a -> f a
-    pure v = Evaluator (\env -> Done v env)
+    pure v = Evaluator (\(env, b) -> Done v env b)
 -- <*> :: f (a -> b) -> f a -> f b
     af <*> ax = Evaluator
-        (\env -> case runEvaluator af env of
+        (\input -> case runEvaluator af input of
             (Error obj env') -> Error obj env'
-            (Done  a   env') -> runEvaluator (fmap a ax) env'
+            (Done a env' b ) -> runEvaluator (fmap a ax) (env', b)
         )
 
 instance Monad Evaluator where
    -- (>>=) :: m a -> (a -> m b) -> m b
     mx >>= f = Evaluator
-        (\env -> case runEvaluator mx env of
+        (\input -> case runEvaluator mx input of
             (Error obj env') -> Error obj env'
-            (Done  a   env') -> runEvaluator (f a) env'
+            (Done a env' b ) -> runEvaluator (f a) (env', b)
         )
 -- return :: a -> m a
 -- return's default implementation is pure
 
 -- fail :: String -> m a
-    fail s = Evaluator (\env -> Error (Obj.Error s) env)
+    fail s = Evaluator (\(env, _) -> Error (Obj.Error s) env)
 
 
 instance Alternative Evaluator where
   -- many :: f a -> f [a]
   -- | (<|>)
     ea <|> eb = Evaluator
-        (\env -> case runEvaluator ea env of
-            r@(Done  _ _) -> r
-            (  Error _ _) -> runEvaluator eb env
+        (\input -> case runEvaluator ea input of
+            r@(Done _ _ _) -> r
+            (  Error _ _ ) -> runEvaluator eb input
         )
-    empty = Evaluator (\env -> Error (Obj.Error "empty Object") env)
+    empty = Evaluator (\(env, _) -> Error (Obj.Error "empty Object") env)
 
 -- | set
 --
 set :: T.Text -> Obj.Object -> Evaluator Obj.Object
-set key value = Evaluator (\env -> Done value (newEnv key value env))
+set key value = Evaluator (\(env, b) -> Done value (newEnv key value env) b)
   where
     newEnv k v e = Obj.Environment (M.insert k v (Obj.store e)) (Obj.outer e)
 
@@ -81,8 +86,8 @@ set key value = Evaluator (\env -> Done value (newEnv key value env))
 --
 get :: T.Text -> Evaluator Obj.Object
 get key = Evaluator
-    (\env -> case lookupIdent env key of
-        (Just obj) -> Done obj env
+    (\(env, b) -> case lookupIdent env key of
+        (Just obj) -> Done obj env b
         Nothing    -> Error
             (Obj.Error (printf "identifier not found: %s" (T.unpack key)))
             env
@@ -92,8 +97,8 @@ get key = Evaluator
 --
 getBuiltins :: T.Text -> Evaluator Obj.Object
 getBuiltins key = Evaluator
-    (\env -> case M.lookup key Blt.builtins of
-        (Just obj) -> Done obj env
+    (\(env, b) -> case M.lookup key Blt.builtins of
+        (Just obj) -> Done obj env b
         Nothing    -> Error
             (Obj.Error (printf "identifier not found: %s" (T.unpack key)))
             env
@@ -110,12 +115,17 @@ lookupIdent env            key = case M.lookup key (Obj.store env) of
 -- | getEnv
 --
 getEnv :: Evaluator Obj.Environment
-getEnv = Evaluator (\env -> Done env env)
+getEnv = Evaluator (\(env, b) -> Done env env b)
 
 -- | modifyEnv
 --
 modifyEnv :: Obj.Environment -> Evaluator ()
-modifyEnv newEnv = Evaluator (\_ -> Done () newEnv)
+modifyEnv newEnv = Evaluator (\(_, b) -> Done () newEnv b)
+
+-- | appendBuffer
+--
+appendBuffer :: T.Text -> Evaluator ()
+appendBuffer s = Evaluator (\(env, b) -> Done () env (b <> s))
 
 -----------------------------------------------------------------------------
 
@@ -306,8 +316,15 @@ evalIndexExpression left index
 -- | applyFunction
 --
 applyFunction :: Obj.Object -> [Obj.Object] -> Evaluator Obj.Object
-applyFunction function args =
-    userFunction function args <|> builtinFunction function args
+applyFunction function args = do
+    object <- userFunction function args <|> builtinFunction function args
+    let objType = Obj.getObjectType object
+    if objType == Obj.IO_OBJ
+        then do
+            let s = Obj.out object
+            appendBuffer s
+            return $ Obj.result object
+        else return object
 
 -- | userFunction
 --

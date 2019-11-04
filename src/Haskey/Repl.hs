@@ -16,13 +16,9 @@ import           System.IO
 import           Text.RawString.QQ
 
 
-type RetEnv = (T.Text, Obj.Environment)
+type RetEnv = (T.Text, Obj.Environment, Evl.Buffer)
 
 -- | start
---
--- TODO:
--- ファイルハンドルは main が任意のものを渡し、start は標準入出力以外にも
--- 対応できるようにする
 --
 start :: Handle -> Handle -> Handle -> IO ()
 start hIn hOut hErr = do
@@ -56,23 +52,23 @@ interprete :: T.Text -> Obj.Environment -> Either RetEnv RetEnv
 interprete s e = do
     let prg = Prs.parse $ Lex.lexicalize s
     checkSyntax prg e
-    run prg e
+    run prg e ""
 
 -- | run
 --
-run :: Ast.Program -> Obj.Environment -> Either RetEnv RetEnv
-run prg e = case Evl.runEvaluator (Evl.eval prg) e of
-    (Evl.Done o e') -> do
-        let out =
+run :: Ast.Program -> Obj.Environment -> Evl.Buffer -> Either RetEnv RetEnv
+run prg e b = case Evl.runEvaluator (Evl.eval prg) (e, b) of
+    (Evl.Done o e' b') -> do
+        let res =
                 if o /= Obj.Void then Obj.inspect o <> "\n" else Obj.inspect o
-        return (out, e')
-    (Evl.Error o e') -> Left (Obj.inspect o <> "\n", e')
+        return (res, e', b')
+    (Evl.Error o e') -> Left (Obj.inspect o <> "\n", e', b)
 
 -- | checkSyntax
 --
 checkSyntax :: Ast.Program -> Obj.Environment -> Either RetEnv Ast.Program
 checkSyntax prg e = if hasError prg
-    then Left (chobiFace <> "\n" <> errContents <> "\n", e)
+    then Left (chobiFace <> "\n" <> errContents <> "\n", e, "")
     else Right prg
   where
     errContents =
@@ -81,14 +77,19 @@ checkSyntax prg e = if hasError prg
 -- | putResult
 --
 putResult :: Handle -> Handle -> Either RetEnv RetEnv -> IO ()
-putResult hOut _    (Right (s, _)) = TIO.hPutStr hOut s
-putResult _    hErr (Left  (s, _)) = TIO.hPutStr hErr s
+putResult hOut _ (Right (res, _, b)) = bufFlush hOut b >> TIO.hPutStr hOut res
+putResult _ hErr (Left (res, _, _)) = TIO.hPutStr hErr res
+
+-- | bufFlush
+--
+bufFlush :: Handle -> Buffer -> IO ()
+bufFlush hOut b = if T.null b then return () else TIO.hPutStrLn hOut b
 
 -- | fetchEnv
 --
 fetchEnv :: Either RetEnv RetEnv -> Obj.Environment
-fetchEnv (Right (_, e)) = e
-fetchEnv (Left  (_, e)) = e
+fetchEnv (Right (_, e, _)) = e
+fetchEnv (Left  (_, e, _)) = e
 
 
 
