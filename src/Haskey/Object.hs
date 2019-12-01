@@ -24,6 +24,7 @@ data ObjectType = NULL_OBJ
                 | BUILTIN_OBJ
                 | ARRAY_OBJ
                 | VOID
+                | IO_OBJ
                 | ERROR
     deriving (Eq, Show)
 
@@ -60,7 +61,11 @@ data Object = Null
             | Array {
                 elements :: [Object]
               }
-            | Void      -- 返り値を返さないオブジェクト let 文など
+            | Void                      -- 返り値を返さないオブジェクト let 文など
+            | IO {                      -- IO に影響あるオブジェクト
+                out :: T.Text           -- 出力結果
+              , result :: Object        -- オブジェクトとしての結果
+              }
             | Error {
                 message :: String
               }
@@ -106,6 +111,7 @@ inspect (Function p b _) = inspectFunction p b
     params = T.intercalate ", " . map Ast.string
 
 inspect Void        = ""
+inspect IO{}        = "IO"
 inspect (Error msg) = T.pack $ "ERROR: " ++ msg
 
 
@@ -121,4 +127,5 @@ getObjectType Function{}      = FUNCTION
 getObjectType Builtin{}       = BUILTIN_OBJ
 getObjectType Array{}         = ARRAY_OBJ
 getObjectType Void            = VOID
+getObjectType IO{}            = IO_OBJ
 getObjectType (Error _)       = ERROR

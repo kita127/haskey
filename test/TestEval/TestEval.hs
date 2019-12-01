@@ -40,9 +40,9 @@ data Ob = ObInt Integer | ObStr T.Text | ObNull | ObArray [Ob] | ObErr String| U
 --
 
 tEnv :: T.Text -> Either String Obj.Environment
-tEnv s = case Evl.runEvaluator (ev s) Obj.newEnvironment of
-    (Evl.Done  _   env) -> Right env
-    (Evl.Error err _  ) -> Left $ show err
+tEnv s = case Evl.runEvaluator (ev s) (Obj.newEnvironment, "") of
+    (Evl.Done _ env _) -> Right env
+    (Evl.Error err _ ) -> Left $ show err
     where ev = Evl.eval . Prs.parse . Lex.lexicalize
 
 
@@ -53,14 +53,15 @@ _program = Prs.parse . Lex.lexicalize
 _evaluator = Evl.eval . _program
 
 _object :: T.Text -> Obj.Object
-_object s = case Evl.runEvaluator (_evaluator s) Obj.newEnvironment of
-    (Evl.Done  obj _) -> obj
-    (Evl.Error err _) -> err
+_object s = case Evl.runEvaluator (_evaluator s) (Obj.newEnvironment, "") of
+    (Evl.Done obj _ _) -> obj
+    (Evl.Error err _ ) -> err
 
 _environment :: T.Text -> Either Obj.Environment Obj.Environment
-_environment s = case Evl.runEvaluator (_evaluator s) Obj.newEnvironment of
-    (Evl.Done  _ e) -> Right e
-    (Evl.Error _ e) -> Left e
+_environment s =
+    case Evl.runEvaluator (_evaluator s) (Obj.newEnvironment, "") of
+        (Evl.Done _ e _) -> Right e
+        (Evl.Error _ e ) -> Left e
 
 _boolValue :: T.Text -> Bool
 _boolValue = Obj.boolVal . _object
