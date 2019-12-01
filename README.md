@@ -205,8 +205,8 @@ love Haskell
 [2, 3, 4]
 >> push(array, "xyz");
 [1, 2, 3, 4, xyz]
->> puts("hoge");
-hoge
+>> puts("hello world!");
+hello world!
 null
 ```
 
