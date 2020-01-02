@@ -15,7 +15,7 @@ Go言語でつくるインタプリタ本と同じ条件とするため以下の
     - text
         - 文字列データ用に使用
     - containers
-        - HashMap 用に使用
+        - Map 用に使用
     - raw-strings-qq
         - ユニットテスト時の生文字列の生成に使用
     - optparse-applicative
