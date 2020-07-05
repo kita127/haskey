@@ -1,4 +1,4 @@
-# Haskey
+# Haskey ![Haskell CI](https://github.com/kita127/haskey/workflows/Haskell%20CI/badge.svg)
 
 ## Description
 haskey is a programming language written in Haskell.
