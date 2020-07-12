@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE QuasiQuotes #-}
 import qualified Data.Text                     as T
 import qualified Haskey.Ast                    as Ast
 import qualified Haskey.Lexer                  as Lx
@@ -164,60 +164,70 @@ testIntegerLiteralExpression = TestList
         return d
 
 
+-- | testExpressionHelper
+--
+testExpressionHelper arg = do
+    let a = tIndexStatement 0 arg
+    b <- tExpressionStatement a
+    let c = Ast.expression b
+    return $ tExpContents c
 
 -- | testParsingPrefixExpressions
 --
 testParsingPrefixExpressions :: Test
 testParsingPrefixExpressions = TestList
-    [ "testParsingPrefixExpressions test 1" ~: helper "!5;" ~?= Right
-        [ExpOp "!", ExpInt 5]
-    , "testParsingPrefixExpressions test 2" ~: helper "-15;" ~?= Right
-        [ExpOp "-", ExpInt 15]
-    , "testParsingPrefixExpressions test 3" ~: helper "!true" ~?= Right
-        [ExpOp "!", ExpBool True]
-    , "testParsingPrefixExpressions test 4" ~: helper "!false" ~?= Right
-        [ExpOp "!", ExpBool False]
+    [ "testParsingPrefixExpressions test 1"
+    ~:  testExpressionHelper "!5;"
+    ~?= Right [ExpOp "!", ExpInt 5]
+    , "testParsingPrefixExpressions test 2"
+    ~:  testExpressionHelper "-15;"
+    ~?= Right [ExpOp "-", ExpInt 15]
+    , "testParsingPrefixExpressions test 3"
+    ~:  testExpressionHelper "!true"
+    ~?= Right [ExpOp "!", ExpBool True]
+    , "testParsingPrefixExpressions test 4"
+    ~:  testExpressionHelper "!false"
+    ~?= Right [ExpOp "!", ExpBool False]
     ]
-  where
-    helper arg = do
-        let a = tIndexStatement 0 arg
-        b <- tExpressionStatement a
-        let c = Ast.expression b
-        return $ tExpContents c
 
 -- | testParsingInfixExpressions
 --
 testParsingInfixExpressions :: Test
 testParsingInfixExpressions = TestList
-    [ "testParsingInfixExpressions test 1" ~: helper "5 + 5;" ~?= Right
-        [ExpInt 5, ExpOp "+", ExpInt 5]
-    , "testParsingInfixExpressions test 2" ~: helper "5 - 5;" ~?= Right
-        [ExpInt 5, ExpOp "-", ExpInt 5]
-    , "testParsingInfixExpressions test 3" ~: helper "5 * 5;" ~?= Right
-        [ExpInt 5, ExpOp "*", ExpInt 5]
-    , "testParsingInfixExpressions test 4" ~: helper "5 / 5;" ~?= Right
-        [ExpInt 5, ExpOp "/", ExpInt 5]
-    , "testParsingInfixExpressions test 5" ~: helper "5 > 5;" ~?= Right
-        [ExpInt 5, ExpOp ">", ExpInt 5]
-    , "testParsingInfixExpressions test 6" ~: helper "5 < 5;" ~?= Right
-        [ExpInt 5, ExpOp "<", ExpInt 5]
-    , "testParsingInfixExpressions test 7" ~: helper "5 == 5;" ~?= Right
-        [ExpInt 5, ExpOp "==", ExpInt 5]
-    , "testParsingInfixExpressions test 8" ~: helper "5 != 5;" ~?= Right
-        [ExpInt 5, ExpOp "!=", ExpInt 5]
-    , "testParsingInfixExpressions test 9" ~: helper "true == true" ~?= Right
-        [ExpBool True, ExpOp "==", ExpBool True]
-    , "testParsingInfixExpressions test 10" ~: helper "true != false" ~?= Right
-        [ExpBool True, ExpOp "!=", ExpBool False]
-    , "testParsingInfixExpressions test 11" ~: helper "false == false" ~?= Right
-        [ExpBool False, ExpOp "==", ExpBool False]
+    [ "testParsingInfixExpressions test 1"
+    ~:  testExpressionHelper "5 + 5;"
+    ~?= Right [ExpInt 5, ExpOp "+", ExpInt 5]
+    , "testParsingInfixExpressions test 2"
+    ~:  testExpressionHelper "5 - 5;"
+    ~?= Right [ExpInt 5, ExpOp "-", ExpInt 5]
+    , "testParsingInfixExpressions test 3"
+    ~:  testExpressionHelper "5 * 5;"
+    ~?= Right [ExpInt 5, ExpOp "*", ExpInt 5]
+    , "testParsingInfixExpressions test 4"
+    ~:  testExpressionHelper "5 / 5;"
+    ~?= Right [ExpInt 5, ExpOp "/", ExpInt 5]
+    , "testParsingInfixExpressions test 5"
+    ~:  testExpressionHelper "5 > 5;"
+    ~?= Right [ExpInt 5, ExpOp ">", ExpInt 5]
+    , "testParsingInfixExpressions test 6"
+    ~:  testExpressionHelper "5 < 5;"
+    ~?= Right [ExpInt 5, ExpOp "<", ExpInt 5]
+    , "testParsingInfixExpressions test 7"
+    ~:  testExpressionHelper "5 == 5;"
+    ~?= Right [ExpInt 5, ExpOp "==", ExpInt 5]
+    , "testParsingInfixExpressions test 8"
+    ~:  testExpressionHelper "5 != 5;"
+    ~?= Right [ExpInt 5, ExpOp "!=", ExpInt 5]
+    , "testParsingInfixExpressions test 9"
+    ~:  testExpressionHelper "true == true"
+    ~?= Right [ExpBool True, ExpOp "==", ExpBool True]
+    , "testParsingInfixExpressions test 10"
+    ~:  testExpressionHelper "true != false"
+    ~?= Right [ExpBool True, ExpOp "!=", ExpBool False]
+    , "testParsingInfixExpressions test 11"
+    ~:  testExpressionHelper "false == false"
+    ~?= Right [ExpBool False, ExpOp "==", ExpBool False]
     ]
-  where
-    helper arg = do
-        let a = tIndexStatement 0 arg
-        b <- tExpressionStatement a
-        let c = Ast.expression b
-        return $ tExpContents c
 
 
 -- | testOperatorPrecedenceParsing
@@ -402,20 +412,20 @@ testFunctionLiteral = TestList
     ~:  (length . parameters) "fn(x, y, z) {};"
     ~?= 3
     , "testFunctionParameterParsing 3 parameters contents"
-    ~:  concatMap (flip paramContents "fn(x, y, z) {};") [0 .. 2]
+    ~:  concatMap (`paramContents` "fn(x, y, z) {};") [0 .. 2]
     ~?= [ExpIdent "x", ExpIdent "y", ExpIdent "z"]
     ]
 
   where
 
-    isFuncLiteral (Ast.FunctionLiteral _ _ _) = True
-    isFuncLiteral _                           = False
+    isFuncLiteral Ast.FunctionLiteral{} = True
+    isFuncLiteral _                     = False
 
     parameters = Ast.parameters . fetchFirstExpression
 
     bodyStmts  = Ast.stmtStatements . Ast.body . fetchFirstExpression
 
-    paramContents n = (tExpContents . (!! n) . parameters)
+    paramContents n = tExpContents . (!! n) . parameters
 
 
 -- | testCallExpressionParsing
@@ -449,8 +459,8 @@ testCallExpressionParsing = TestList
     ~?= [ExpInt 4, ExpOp "+", ExpInt 5]
     ]
   where
-    isCallExpression (Ast.CallExpression _ _ _) = Right True
-    isCallExpression ex                         = Left $ Ast.string ex
+    isCallExpression Ast.CallExpression{} = Right True
+    isCallExpression ex                   = Left $ Ast.string ex
 
     argumentsContents n =
         tExpContents . (!! n) . Ast.arguments . fetchFirstExpression

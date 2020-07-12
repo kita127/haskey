@@ -73,6 +73,9 @@ tests:
     - HUnit
     - raw-strings-qq
     - text
+    default-extensions:
+    - OverloadedStrings
+    - QuasiQuotes
   eval:
     main:                TestEval.hs
     source-dirs:         test/TestEval

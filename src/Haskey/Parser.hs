@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 module Haskey.Parser
     ( parse
     )
@@ -10,6 +11,7 @@ import qualified Data.Text                     as T
 import qualified Haskey.Ast                    as Ast
 import qualified Haskey.Token                  as Tok
 import           Text.Printf
+import           Data.Functor
 
 ----------------------------------------------------------------------------------------------------
 -- Parser combinator
@@ -33,7 +35,7 @@ instance Functor Parser where
 
 instance Applicative Parser where
    -- pure :: a -> Parser a
-    pure v = Parser (\input -> Done v input)
+    pure v = Parser (Done v)
 
 -- <*> :: Parser (a -> b) -> Parser a -> Parser b
     pg <*> px = Parser
@@ -54,7 +56,7 @@ instance Monad Parser where
 -- return's default implementation is pure
 
 -- fail :: String -> m a
-    fail s = Parser (\input -> Fail s input)
+    fail s = Parser (Fail s)
 
 instance Alternative Parser where
   -- many :: f a -> f [a]
@@ -74,7 +76,7 @@ instance Alternative Parser where
 --
 nextToken :: Parser Tok.Token
 nextToken = Parser
-    (\input -> case input of
+    (\case
         []       -> Fail "empty imput" []
         (x : xs) -> Done x xs
     )
@@ -173,9 +175,9 @@ infixParseFns = M.fromList
 parse :: [Tok.Token] -> Ast.Program
 parse = Ast.program . result
   where
-    result []                       = []
-    result [(Tok.Token Tok.Eof "")] = []
-    result ts                       = case runParser parseStatement ts of
+    result []                     = []
+    result [Tok.Token Tok.Eof ""] = []
+    result ts                     = case runParser parseStatement ts of
             -- 前の statement 最後のトークンで終わっているので次にトークンを進める
         (Done a      (_ : rs)) -> a : result rs
         (Fail reason (r : rs)) -> newFailStmt r reason : result rs
@@ -407,8 +409,7 @@ parseRbrace = expectCur Tok.Rbrace
 -- | parseBool
 --
 parseBool :: Parser Bool
-parseBool =
-    expectCur Tok.TRUE *> pure True <|> expectCur Tok.FALSE *> pure False
+parseBool = (expectCur Tok.TRUE $> True) <|> (expectCur Tok.FALSE $> False)
 
 -- | parseLet
 --
@@ -439,7 +440,7 @@ parseInteger = do
 --
 goAheadIfNextSemicolon :: Parser ()
 goAheadIfNextSemicolon =
-    expectPeek Tok.Semicolon *> nextToken *> pure () <|> pure ()
+    ((expectPeek Tok.Semicolon *> nextToken) $> ()) <|> pure ()
 
 -- | parentheses
 --

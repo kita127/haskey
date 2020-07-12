@@ -43,7 +43,7 @@ instance Functor Evaluator where
 
 instance Applicative Evaluator where
    -- pure :: a -> f a
-    pure v = Evaluator (\(env, b) -> Done v env b)
+    pure v = Evaluator (uncurry (Done v))
 -- <*> :: f (a -> b) -> f a -> f b
     af <*> ax = Evaluator
         (\input -> case runEvaluator af input of
@@ -70,8 +70,8 @@ instance Alternative Evaluator where
   -- | (<|>)
     ea <|> eb = Evaluator
         (\input -> case runEvaluator ea input of
-            r@(Done _ _ _) -> r
-            (  Error _ _ ) -> runEvaluator eb input
+            r@Done{}    -> r
+            (Error _ _) -> runEvaluator eb input
         )
     empty = Evaluator (\(env, _) -> Error (Obj.Error "empty Object") env)
 
