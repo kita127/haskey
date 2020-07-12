@@ -27,7 +27,7 @@ tEval s = case Evl.runEvaluator (e s) (Obj.newEnvironment, "") of
     where e = Evl.eval . Prs.parse . Lex.lexicalize
 
 tArrayObject :: Obj.Object -> Either String Obj.Object
-tArrayObject o@(Obj.Array{}) = Right o
+tArrayObject o@Obj.Array{} = Right o
 tArrayObject x               = Left $ show x
 
 tInteger :: Obj.Object -> Either String Integer
