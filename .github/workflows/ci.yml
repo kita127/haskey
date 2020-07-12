@@ -31,6 +31,7 @@ jobs:
     - uses: mstksg/setup-stack@v2
     - run: stack build
     - run: stack test
-    - run: |
+    - if: runner.os == 'Linux'
+      run: |
         stack install hlint
         hlint .
