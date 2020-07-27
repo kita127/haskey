@@ -100,4 +100,4 @@ bPush args =
 --
 bPuts :: [Obj.Object] -> Obj.Object
 bPuts xs = Obj.IO txt Obj.Null
-    where txt = T.intercalate "\n" . map Obj.inspect $ xs
+    where txt = (<> "\n") . T.intercalate "\n" . map Obj.inspect $ xs

@@ -1,12 +1,15 @@
 module Main where
 
-import           Haskey.Repl
-import           Haskey.Executor
+import           Haskey.Executor                ( repl
+                                                , exec
+                                                )
 import           Options.Applicative
 import           System.IO                      ( stdin
                                                 , stdout
                                                 , stderr
+                                                , readFile
                                                 )
+import qualified Data.Text                     as T
 
 
 
@@ -23,10 +26,6 @@ description =
 
 myOpt :: Parser Option
 myOpt = Option <$> argOption
---  <*> hogeOption
-
-
-
   where
     argOption :: Parser [String]
     argOption =
@@ -49,5 +48,7 @@ main :: IO ()
 main = do
     options <- execParser parserInfo
     if null (args options)
-        then start stdin stdout stdout
-        else execute $ head $ args options
+        then repl stdin stdout stderr
+        else do
+            s <- fmap T.pack <$> readFile $ head $ args options
+            exec s stdout stderr

@@ -1,0 +1,20 @@
+let hoge = 100;
+let fuga = 3;
+
+let sum = fn(a, b){
+    return a + b;
+};
+
+let mul = fn(a, b){
+    return a * b;
+};
+
+let apply = fn(a, b, f){
+    return f(a, b);
+};
+
+let resSum = apply(hoge, fuga, sum);
+let resMul = apply(hoge, fuga, mul);
+
+puts(resSum);
+puts(resMul);
