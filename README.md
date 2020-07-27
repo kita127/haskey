@@ -31,6 +31,9 @@ Go言語でつくるインタプリタ本と同じ条件とするため以下の
 プログラム言語作成に於いて本質的な部分には外部パッケージは使用していないつもりです。
 
 ## Synopsis
+
+引数を与えない場合は REPL として起動します。
+
 ```
 prompt$ haskey
 Hello! This is the Haskey programming language!
@@ -51,6 +54,38 @@ False
 8
 >> "Hello" + " " + "World";
 Hello World
+```
+
+Haskey コードが書かれたファイルを指定して実行も可能です。
+
+```
+prompt$ cat example\sample01.haskey
+let hoge = 100;
+let fuga = 3;
+
+let sum = fn(a, b){
+    return a + b;
+};
+
+let mul = fn(a, b){
+    return a * b;
+};
+
+let apply = fn(a, b, f){
+    return f(a, b);
+};
+
+let resSum = apply(hoge, fuga, sum);
+let resMul = apply(hoge, fuga, mul);
+
+puts(resSum);
+puts(resMul);
+
+prompt$ haskey example\sample01.haskey
+103
+300
+
+
 ```
 
 ## Required
