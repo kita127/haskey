@@ -97,7 +97,7 @@ putBuf _    hErr (Left  (res, _, _)) = TIO.hPutStr hErr res
 -- | bufFlush
 --
 bufFlush :: Handle -> Buffer -> IO ()
-bufFlush hOut b = if T.null b then return () else TIO.hPutStrLn hOut b
+bufFlush hOut b = if T.null b then return () else TIO.hPutStr hOut b
 
 -- | fetchEnv
 --
