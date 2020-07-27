@@ -2,6 +2,7 @@
 {-# LANGUAGE QuasiQuotes       #-}
 module Haskey.Executor
     ( repl
+    , exec
     )
 where
 
@@ -17,6 +18,12 @@ import           Text.RawString.QQ
 
 
 type RetEnv = (T.Text, Obj.Environment, Evl.Buffer)
+
+-- | exec
+--
+exec :: T.Text -> Handle -> Handle -> IO ()
+exec s hOut hErr = undefined
+    -- s <- file in
 
 -- | repl
 --
