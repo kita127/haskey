@@ -22,8 +22,9 @@ type RetEnv = (T.Text, Obj.Environment, Evl.Buffer)
 -- | exec
 --
 exec :: T.Text -> Handle -> Handle -> IO ()
-exec s hOut hErr = undefined
-    -- s <- file in
+exec s hOut hErr = do
+    let res = interprete s Obj.newEnvironment
+    putBuf hOut hErr res
 
 -- | repl
 --
@@ -86,6 +87,12 @@ checkSyntax prg e = if hasError prg
 putResult :: Handle -> Handle -> Either RetEnv RetEnv -> IO ()
 putResult hOut _ (Right (res, _, b)) = bufFlush hOut b >> TIO.hPutStr hOut res
 putResult _ hErr (Left (res, _, _)) = TIO.hPutStr hErr res
+
+-- | putBuf
+--
+putBuf :: Handle -> Handle -> Either RetEnv RetEnv -> IO ()
+putBuf hOut _    (Right (_  , _, b)) = bufFlush hOut b
+putBuf _    hErr (Left  (res, _, _)) = TIO.hPutStr hErr res
 
 -- | bufFlush
 --

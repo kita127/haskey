@@ -1,0 +1,3 @@
+let hoge = 100;
+let fuga = 3;
+puts(hoge * fuga);
