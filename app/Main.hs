@@ -1,6 +1,6 @@
 module Main where
 
-import           Haskey.Executor
+import           Haskey.Executor                ( repl )
 import           Options.Applicative
 import           System.IO                      ( stdin
                                                 , stdout
@@ -23,12 +23,6 @@ description =
 myOpt :: Parser Option
 myOpt = Option <$> argOption
 --  <*> hogeOption
-
-
-
-
-
-
   where
     argOption :: Parser [String]
     argOption =
@@ -50,4 +44,4 @@ parserInfo =
 main :: IO ()
 main = do
     options <- execParser parserInfo
-    if null (args options) then start stdin stdout stdout else undefined
+    if null (args options) then repl stdin stdout stderr else undefined

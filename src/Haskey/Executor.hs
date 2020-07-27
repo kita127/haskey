@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 module Haskey.Executor
-    ( start
+    ( repl
     )
 where
 
@@ -18,10 +18,10 @@ import           Text.RawString.QQ
 
 type RetEnv = (T.Text, Obj.Environment, Evl.Buffer)
 
--- | start
+-- | repl
 --
-start :: Handle -> Handle -> Handle -> IO ()
-start hIn hOut hErr = do
+repl :: Handle -> Handle -> Handle -> IO ()
+repl hIn hOut hErr = do
     greet hOut
     loop hIn hOut hErr Obj.newEnvironment
 
